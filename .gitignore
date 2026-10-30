@@ -1,0 +1,27 @@
+# Repository-level ignores. Each project (ethera-eval-core/, ethera-eval-web/) keeps its own
+# .gitignore as well, so it can be split into its own repository later (D-001).
+
+# Gate logs, coverage reports and probe output (full-gate skill).
+.gate/
+
+# Live-testing scenario folder (Bible Phase 10): scenarios and the FINDINGS journal stay local.
+live-testing/
+
+# The Bible stays local: binding for the work, never published (owner, D-020).
+docs/Claude_Code_Bible.md
+
+# Environment files with real values; .env.example files are committed.
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Claude Code local state
+.claude/settings.local.json
+.claude/edited.log

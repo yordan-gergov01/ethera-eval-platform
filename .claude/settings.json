@@ -1,0 +1,55 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest *)",
+      "Bash(ruff *)",
+      "Bash(mypy *)",
+      "Bash(lint-imports *)",
+      "Bash(pre-commit run *)",
+      "Bash(npm ci *)",
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Bash(npx prettier *)",
+      "Bash(npx eslint *)",
+      "Bash(docker compose *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(sha256sum *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
+    ],
+    "deny": [
+      "Read(**/.env*)",
+      "Read(!**/.env.example)",
+      "Edit(**/.env)",
+      "Edit(**/.env.local)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/format_edited.py\"",
+            "timeout": 90
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop_checks.py\"",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
+  }
+}

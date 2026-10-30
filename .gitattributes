@@ -1,0 +1,10 @@
+# Repository-level attributes for the files outside the two projects (.specify scripts,
+# .claude hooks, docs). Each project keeps its own .gitattributes (D-001).
+# Normalise text files to LF in the repository and in working copies, so shell scripts
+# behave the same on every host.
+* text=auto eol=lf
+
+# Binary files are never normalised or diffed as text.
+*.png binary
+*.jpg binary
+*.ico binary

@@ -1,0 +1,60 @@
+# ethera-eval-core: repo-wide lint and format, types, import contracts, the full suite on a
+# freshly created database and broker, the coverage gates as a separate pass, and the
+# boot-without-evals test (part of the suite). Mirrors the full-gate skill.
+name: core
+
+on:
+  pull_request:
+    paths: ["ethera-eval-core/**", ".github/workflows/core.yml"]
+  push:
+    branches: [main]
+    paths: ["ethera-eval-core/**", ".github/workflows/core.yml"]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: ethera-eval-core
+
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned tools and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --require-hashes -r requirements/dev.txt
+          pip install -e . --no-deps
+      - run: ruff format --check .
+      - run: ruff check .
+      - run: mypy
+      - run: lint-imports
+
+  tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned tools and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --require-hashes -r requirements/dev.txt
+          pip install -e . --no-deps
+      - name: Start a fresh database and broker (tmpfs, created from zero)
+        run: docker compose -f docker-compose.test.yml -p ethera_eval_core_test up -d --wait postgres rabbitmq
+      - name: Full suite with coverage (integration tests fail, never skip)
+        env:
+          REQUIRE_INTEGRATION: "1"
+        run: pytest -p no:cacheprovider --cov --cov-report=term --cov-report=json:coverage.json
+      - name: Coverage gates (separate pass)
+        run: python scripts/coverage_gates.py coverage.json
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.test.yml -p ethera_eval_core_test down -v

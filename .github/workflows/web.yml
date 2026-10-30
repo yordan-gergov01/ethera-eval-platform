@@ -1,0 +1,29 @@
+# ethera-eval-web: `npm run check` (Prettier, ESLint with zero warnings, tsc, Vitest including
+# the file-header guard) and the production build.
+name: web
+
+on:
+  pull_request:
+    paths: ["ethera-eval-web/**", ".github/workflows/web.yml"]
+  push:
+    branches: [main]
+    paths: ["ethera-eval-web/**", ".github/workflows/web.yml"]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: ethera-eval-web
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ethera-eval-web/.nvmrc
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
+      - run: npm run build
