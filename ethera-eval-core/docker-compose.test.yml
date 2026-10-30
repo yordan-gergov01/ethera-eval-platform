@@ -1,0 +1,80 @@
+# Disposable infrastructure for the test suite, run as its own project so it never
+# touches the development stack or its volumes. With only Docker installed:
+#
+#   docker compose -f docker-compose.test.yml -p ethera_eval_core_test up -d --wait postgres rabbitmq
+#   docker compose -f docker-compose.test.yml -p ethera_eval_core_test run --rm --build tests
+#   docker compose -f docker-compose.test.yml -p ethera_eval_core_test down
+#
+# The same database and broker serve pytest from a local virtual environment, because
+# they are published on the loopback interface. Data lives on tmpfs and disappears with the
+# containers. All credentials below are fixed, fake and used only by this stack.
+name: ethera_eval_core_test
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.7-pg18-trixie@sha256:9d9c930220cb9bf2f956d10a8f909cf9973d9672ca0278aef2c1e6facccad2e0
+    environment:
+      POSTGRES_DB: ethera_eval_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: test-only-not-a-secret
+      POSTGRES_APP_USER: ethera_eval_app
+      POSTGRES_APP_PASSWORD: test-only-not-a-secret
+    volumes:
+      - ./docker/postgres/initdb:/docker-entrypoint-initdb.d:ro
+    tmpfs:
+      - /var/lib/postgresql
+    ports:
+      - "127.0.0.1:${TEST_DB_PORT:-55432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  rabbitmq:
+    image: rabbitmq:4.3.6-management-alpine@sha256:3ef7f7e89fed709a78f79b8b5f4e30e1312a1d4089da752e23595566d9d61a95
+    hostname: rabbitmq
+    entrypoint: ["sh", "/opt/ethera-eval/provision-entrypoint.sh"]
+    command: ["rabbitmq-server"]
+    environment:
+      RABBITMQ_VHOST: ethera_eval_test
+      RABBITMQ_BACKEND_USER: backend
+      RABBITMQ_BACKEND_PASSWORD: test-only-not-a-secret
+      RABBITMQ_RUNNER_USER: runner
+      RABBITMQ_RUNNER_PASSWORD: test-only-not-a-secret
+      RABBITMQ_INSPECTOR_USER: inspector
+      RABBITMQ_INSPECTOR_PASSWORD: test-only-not-a-secret
+    volumes:
+      - ./docker/rabbitmq/provision-entrypoint.sh:/opt/ethera-eval/provision-entrypoint.sh:ro
+      - ./docker/rabbitmq/conf.d/20-ethera-eval.conf:/etc/rabbitmq/conf.d/20-ethera-eval.conf:ro
+    # The image keeps its data in an anonymous volume, removed by `down -v`. (A tmpfs
+    # would be owned by root, and the broker could not read its Erlang cookie.)
+    tmpfs:
+      - /run/rabbitmq-definitions
+    ports:
+      - "127.0.0.1:${TEST_BROKER_PORT:-55672}:5672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  tests:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: test
+    environment:
+      TEST_DB_HOST: postgres
+      TEST_DB_PORT: "5432"
+      TEST_BROKER_HOST: rabbitmq
+      TEST_BROKER_PORT: "5672"
+      # Inside Docker a missing database is a failure, never a skip.
+      REQUIRE_INTEGRATION: "1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    # Started only by `run`, never by a plain `up`.
+    profiles: ["tests"]

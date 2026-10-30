@@ -1,0 +1,44 @@
+# Run `pre-commit install` once inside the activated .venv. The local hooks use the
+# tools pinned in requirements/dev.txt, so the virtual environment must be active.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.10 # keep in step with ruff in requirements/dev.txt
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  # mypy and import-linter need the project's dependencies, which isolated hook
+  # environments do not have, so they run from the active virtual environment.
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: unsupported
+        types: [python]
+        pass_filenames: false
+      - id: import-linter
+        name: import-linter
+        entry: lint-imports
+        language: unsupported
+        types: [python]
+        pass_filenames: false

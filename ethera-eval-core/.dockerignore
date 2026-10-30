@@ -1,0 +1,17 @@
+# Only what the Dockerfiles copy explicitly is needed; keep the build context small
+# and free of secrets.
+*
+!backend/
+!common_lib/
+!runner/
+!migrations/
+!requirements/
+!tests/
+!pyproject.toml
+# Read by the configuration drift tests in the test image; none holds secrets.
+!docker-compose.yml
+!.env.example
+!docker/rabbitmq/provision-entrypoint.sh
+
+**/__pycache__/
+**/*.py[cod]

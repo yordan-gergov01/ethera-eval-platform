@@ -1,0 +1,18 @@
+# Direct runtime dependencies of the backend service.
+# Compiled into backend.txt; see README.md, "How to run the tests".
+# RabbitMQ client: publishes jobs and consumes results.
+aio-pika
+asyncpg
+email-validator
+fastapi
+pwdlib[argon2]
+pydantic
+pydantic-settings
+pyjwt
+# Form parsing for the OAuth2 password login used by the docs "Authorize" button.
+python-multipart
+structlog
+# Time zone data for zoneinfo, independent of the operating system.
+tzdata
+tortoise-orm
+uvicorn

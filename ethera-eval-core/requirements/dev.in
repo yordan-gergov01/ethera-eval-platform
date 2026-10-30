@@ -1,0 +1,22 @@
+# Local development and test tooling, on top of both services' dependencies.
+# The constraints keep shared packages at the versions the services use.
+-r backend.in
+-r runner.in
+-c backend.txt
+-c runner.txt
+
+uv
+ruff
+mypy
+pytest
+pytest-asyncio
+# Coverage measurement for the coverage gates (docs/DECISIONS.md D-008).
+pytest-cov
+httpx
+import-linter
+pre-commit
+# Reads docker-compose.yml in the configuration drift test.
+pyyaml
+# Type information for libraries that ship none.
+asyncpg-stubs
+types-pyyaml

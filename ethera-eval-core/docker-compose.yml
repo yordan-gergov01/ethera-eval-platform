@@ -1,0 +1,200 @@
+name: ethera_eval_core
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.7-pg18-trixie@sha256:9d9c930220cb9bf2f956d10a8f909cf9973d9672ca0278aef2c1e6facccad2e0
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set in .env}
+      POSTGRES_USER: ${POSTGRES_SUPERUSER:?POSTGRES_SUPERUSER must be set in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?POSTGRES_SUPERUSER_PASSWORD must be set in .env}
+      POSTGRES_APP_USER: ${POSTGRES_APP_USER:?POSTGRES_APP_USER must be set in .env}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD must be set in .env}
+    volumes:
+      # PostgreSQL 18 images keep their data under /var/lib/postgresql/<major>/docker.
+      - postgres_data:/var/lib/postgresql
+      - ./docker/postgres/initdb:/docker-entrypoint-initdb.d:ro
+    networks:
+      - data
+    healthcheck:
+      # TCP rather than the socket: during first-start initialisation the
+      # temporary server listens on the socket only and must not count as ready.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+    read_only: true
+    tmpfs:
+      - /var/run/postgresql
+      - /tmp
+    # The entrypoint starts as root and fixes the ownership and mode of the data
+    # directory, which on an existing volume belongs to the postgres user, then
+    # switches to that user.
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB:?POSTGRES_DB must be set in .env}
+      DB_USER: ${POSTGRES_APP_USER:?POSTGRES_APP_USER must be set in .env}
+      DB_PASSWORD: ${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD must be set in .env}
+      DB_POOL_MAX_SIZE: ${DB_POOL_MAX_SIZE:-10}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?ADMIN_USERNAME must be set in .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?ADMIN_EMAIL must be set in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set in .env}
+      ENABLE_API_DOCS: ${ENABLE_API_DOCS:-true}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      MAX_REQUEST_BODY_BYTES: ${MAX_REQUEST_BODY_BYTES:-1048576}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      RATE_LIMIT_DEFAULT_REQUESTS: ${RATE_LIMIT_DEFAULT_REQUESTS:-120}
+      RATE_LIMIT_DEFAULT_WINDOW_SECONDS: ${RATE_LIMIT_DEFAULT_WINDOW_SECONDS:-60}
+      RATE_LIMIT_LOGIN_REQUESTS: ${RATE_LIMIT_LOGIN_REQUESTS:-5}
+      RATE_LIMIT_LOGIN_WINDOW_SECONDS: ${RATE_LIMIT_LOGIN_WINDOW_SECONDS:-60}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:?RABBITMQ_VHOST must be set in .env}
+      RABBITMQ_USER: ${RABBITMQ_BACKEND_USER:?RABBITMQ_BACKEND_USER must be set in .env}
+      RABBITMQ_PASSWORD: ${RABBITMQ_BACKEND_PASSWORD:?RABBITMQ_BACKEND_PASSWORD must be set in .env}
+      RABBITMQ_PREFETCH_COUNT: ${RABBITMQ_PREFETCH_COUNT:-10}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+    # One host port by default. To run several replicas, give one port per replica,
+    # for example BACKEND_PORT=8000-8001 with --scale backend=2.
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    networks:
+      - edge
+      - data
+      - messaging
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      # The image has no curl: a 503 or a refused connection makes Python exit with 1.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  runner:
+    build:
+      context: .
+      dockerfile: runner/Dockerfile
+      target: runtime
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:?RABBITMQ_VHOST must be set in .env}
+      RABBITMQ_USER: ${RABBITMQ_RUNNER_USER:?RABBITMQ_RUNNER_USER must be set in .env}
+      RABBITMQ_PASSWORD: ${RABBITMQ_RUNNER_PASSWORD:?RABBITMQ_RUNNER_PASSWORD must be set in .env}
+      RABBITMQ_PREFETCH_COUNT: ${RABBITMQ_PREFETCH_COUNT:-10}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+    # The broker only: no database network, no published ports.
+    networks:
+      - messaging
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      # No ports to ask: the service rewrites a heartbeat file while it is connected.
+      test: ["CMD", "python", "-m", "runner.heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    # Room for the worker's ten-second shutdown grace once slice 003 gives it a handler.
+    stop_grace_period: 15s
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:4.3.6-management-alpine@sha256:3ef7f7e89fed709a78f79b8b5f4e30e1312a1d4089da752e23595566d9d61a95
+    # RabbitMQ stores its data per node name (rabbit@<hostname>); a fixed
+    # hostname keeps queues and messages across container re-creation.
+    hostname: rabbitmq
+    entrypoint: ["sh", "/opt/ethera-eval/provision-entrypoint.sh"]
+    command: ["rabbitmq-server"]
+    environment:
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:?RABBITMQ_VHOST must be set in .env}
+      RABBITMQ_BACKEND_USER: ${RABBITMQ_BACKEND_USER:?RABBITMQ_BACKEND_USER must be set in .env}
+      RABBITMQ_BACKEND_PASSWORD: ${RABBITMQ_BACKEND_PASSWORD:?RABBITMQ_BACKEND_PASSWORD must be set in .env}
+      RABBITMQ_RUNNER_USER: ${RABBITMQ_RUNNER_USER:?RABBITMQ_RUNNER_USER must be set in .env}
+      RABBITMQ_RUNNER_PASSWORD: ${RABBITMQ_RUNNER_PASSWORD:?RABBITMQ_RUNNER_PASSWORD must be set in .env}
+      RABBITMQ_INSPECTOR_USER: ${RABBITMQ_INSPECTOR_USER:?RABBITMQ_INSPECTOR_USER must be set in .env}
+      RABBITMQ_INSPECTOR_PASSWORD: ${RABBITMQ_INSPECTOR_PASSWORD:?RABBITMQ_INSPECTOR_PASSWORD must be set in .env}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./docker/rabbitmq/provision-entrypoint.sh:/opt/ethera-eval/provision-entrypoint.sh:ro
+      - ./docker/rabbitmq/conf.d/20-ethera-eval.conf:/etc/rabbitmq/conf.d/20-ethera-eval.conf:ro
+    read_only: true
+    tmpfs:
+      - /run/rabbitmq-definitions
+    networks:
+      - messaging
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 6
+      start_period: 30s
+    # The entrypoint starts as root to own the Erlang cookie and the definitions,
+    # then switches to the rabbitmq user. The health check runs as root and reads
+    # the broker-owned cookie, which needs DAC_OVERRIDE.
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+networks:
+  # The only network with a published port: the backend's API.
+  edge: {}
+  data:
+    internal: true
+  messaging:
+    internal: true
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

@@ -1,0 +1,7 @@
+# Direct runtime dependencies of the runner service.
+# Compiled into runner.txt; see README.md, "How to run the tests".
+# RabbitMQ client: consumes jobs and publishes results.
+aio-pika
+pydantic
+pydantic-settings
+structlog
