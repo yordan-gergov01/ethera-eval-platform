@@ -1,0 +1,41 @@
+#!/bin/sh
+# Sourced by the nginx image's entrypoint (/docker-entrypoint.sh) before the
+# configuration templates are rendered. It validates BACKEND_URL, writes the
+# runtime configuration the app loads from /config.js, and exports
+# BACKEND_ORIGIN for the Content-Security-Policy in the server template.
+#
+# BACKEND_URL must be an origin: http or https, a host name, an IPv4 address or
+# a bracketed IPv6 address, and an optional port. Paths, queries and
+# credentials are refused, as the app itself refuses them. The restricted
+# character set also keeps the value safe inside JavaScript and an HTTP header.
+# On a missing or invalid value the container does not start. The value is not
+# echoed, as it could contain credentials.
+
+runtime_config_fail() {
+  echo "runtime-config: ERROR: $1" >&2
+  exit 1
+}
+
+if [ -z "${BACKEND_URL:-}" ]; then
+  runtime_config_fail "BACKEND_URL is not set; set it in .env, for example BACKEND_URL=http://localhost:8000"
+fi
+
+# Scheme and host are case-insensitive; one trailing slash is allowed.
+BACKEND_ORIGIN=$(printf '%s' "${BACKEND_URL%/}" | tr 'A-Z' 'a-z')
+
+LABEL='[a-z0-9]([a-z0-9-]*[a-z0-9])?'
+if ! printf '%s' "$BACKEND_ORIGIN" |
+  grep -Eqx "https?://(${LABEL}(\.${LABEL})*|\[[0-9a-f:.]+\])(:[0-9]{1,5})?"; then
+  runtime_config_fail "BACKEND_URL must be an http(s) origin such as http://localhost:8000, without path, query or credentials"
+fi
+
+BACKEND_PORT=$(printf '%s' "$BACKEND_ORIGIN" | sed -nE 's/.*:([0-9]{1,5})$/\1/p')
+if [ -n "$BACKEND_PORT" ] && { [ "$BACKEND_PORT" -lt 1 ] || [ "$BACKEND_PORT" -gt 65535 ]; }; then
+  runtime_config_fail "BACKEND_URL has an invalid port"
+fi
+unset LABEL BACKEND_PORT
+
+mkdir -p /tmp/runtime /tmp/nginx/conf.d
+printf 'window.__APP_CONFIG__ = {"backendUrl":"%s"};\n' "$BACKEND_ORIGIN" >/tmp/runtime/config.js
+export BACKEND_ORIGIN
+echo "runtime-config: serving /config.js for backend $BACKEND_ORIGIN"

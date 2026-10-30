@@ -1,0 +1,11 @@
+# Security headers for every response, error responses included ("always").
+# nginx drops inherited add_header lines in any location that sets its own,
+# so each location includes this file instead of relying on inheritance.
+#
+# The CSP allows scripts, styles and connections only from this origin, plus
+# API calls to the configured backend (BACKEND_ORIGIN, validated at start).
+
+add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' ${BACKEND_ORIGIN}; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "no-referrer" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;

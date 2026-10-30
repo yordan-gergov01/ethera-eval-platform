@@ -1,0 +1,20 @@
+# Normalise text files to LF in the repository and in working copies, so shell
+# scripts, Dockerfiles and configuration behave the same on every host.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files are never normalised or diffed as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.gz binary
+*.zip binary

@@ -1,0 +1,118 @@
+@import 'tailwindcss';
+
+/*
+ * Native elements are styled once here, so forms and tables inside the
+ * features need no class lists. Every interactive element keeps a visible
+ * focus outline for keyboard users.
+ */
+@layer base {
+  html {
+    @apply bg-gray-50 text-gray-900 antialiased;
+  }
+
+  main {
+    @apply mx-auto max-w-4xl px-4 py-8;
+  }
+
+  h1 {
+    @apply mb-6 text-2xl font-semibold tracking-tight;
+  }
+
+  h2 {
+    @apply mt-10 mb-4 text-lg font-semibold;
+  }
+
+  p {
+    @apply my-2;
+  }
+
+  a {
+    @apply text-blue-700 underline-offset-2 hover:underline;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-600;
+  }
+
+  form,
+  fieldset {
+    @apply grid max-w-lg gap-5;
+  }
+
+  label {
+    @apply text-sm font-medium text-gray-800;
+  }
+
+  input,
+  select,
+  textarea {
+    @apply w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs;
+  }
+
+  textarea {
+    @apply resize-y;
+  }
+
+  :is(input, select, textarea):disabled {
+    @apply cursor-not-allowed bg-gray-100 text-gray-500;
+  }
+
+  :is(input, select, textarea)[aria-invalid='true'] {
+    @apply border-red-600;
+  }
+
+  button {
+    @apply cursor-pointer justify-self-start rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  table {
+    @apply w-full border-collapse text-sm;
+  }
+
+  th {
+    @apply border-b border-gray-300 px-3 py-2 text-left font-semibold text-gray-700;
+  }
+
+  td {
+    @apply border-b border-gray-200 px-3 py-2;
+  }
+
+  table[aria-busy='true'] {
+    @apply opacity-60;
+  }
+
+  code,
+  pre {
+    @apply font-mono text-xs;
+  }
+}
+
+/*
+ * The only shared classes. Any new shared pattern becomes a component in
+ * components/ui/ instead of another class here.
+ */
+@layer components {
+  .notice {
+    @apply rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800;
+  }
+
+  .status {
+    @apply text-sm text-gray-600;
+  }
+
+  .details {
+    @apply mb-6 grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 text-sm;
+
+    & dt {
+      @apply font-medium text-gray-600;
+    }
+  }
+
+  .pagination {
+    @apply mt-4 flex items-center gap-4 text-sm text-gray-700;
+  }
+
+  .answer {
+    @apply rounded-md border border-gray-200 bg-white p-4 text-sm [overflow-wrap:anywhere] whitespace-pre-wrap;
+  }
+}

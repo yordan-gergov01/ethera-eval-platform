@@ -1,0 +1,36 @@
+# Rendered at container start by the image's envsubst step; only
+# ${BACKEND_ORIGIN} is substituted (NGINX_ENVSUBST_FILTER), nginx variables
+# such as $uri stay as they are.
+#
+# Cache-Control is added without "always", so only successful responses carry
+# it; a 404 is never cached for a year.
+
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+
+    # Written at container start from BACKEND_URL (docker/entrypoint.d); never
+    # cached, so a changed backend URL applies on the next page load.
+    location = /config.js {
+        alias /tmp/runtime/config.js;
+        add_header Cache-Control "no-store";
+        include /tmp/nginx/conf.d/snippets/security-headers.conf;
+    }
+
+    # Build output with content hashes in the file names: cache for a year,
+    # and answer 404 for a missing file instead of the app.
+    location /assets/ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        include /tmp/nginx/conf.d/snippets/security-headers.conf;
+    }
+
+    # Client-side routes fall back to the app; index.html is revalidated on
+    # every load so a new deployment is picked up at once.
+    location / {
+        try_files $uri /index.html;
+        add_header Cache-Control "no-cache";
+        include /tmp/nginx/conf.d/snippets/security-headers.conf;
+    }
+}

@@ -1,0 +1,33 @@
+# The frontend on its own: cp .env.example .env, then docker compose up -d.
+#
+# The browser calls the backend directly at BACKEND_URL; this container never
+# does. It joins only its own network, never the core stack's, so it has no
+# path to the runner, RabbitMQ or PostgreSQL.
+name: ethera_eval_web
+
+services:
+  web:
+    build:
+      context: .
+      target: runtime
+    environment:
+      # Written into /config.js at start; the container refuses to start when
+      # it is not an http(s) origin.
+      BACKEND_URL: ${BACKEND_URL:?BACKEND_URL must be set in .env}
+    # The origin http://localhost:<port> must be in the backend's CORS_ALLOWED_ORIGINS.
+    ports:
+      - '${FRONTEND_PORT:-3000}:8080'
+    networks:
+      - web
+    # The health check is defined in the image: it fetches /index.html.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+networks:
+  web: {}
