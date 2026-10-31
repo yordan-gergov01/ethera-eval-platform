@@ -24,7 +24,21 @@
       "Read(**/.env*)",
       "Read(!**/.env.example)",
       "Edit(**/.env)",
-      "Edit(**/.env.local)"
+      "Edit(**/.env.local)",
+      "Edit(/ethera-eval-core/tests/integration/registry/_contract_fixtures.py)",
+      "Edit(/ethera-eval-core/tests/integration/registry/_registry_oracle.py)",
+      "Edit(/ethera-eval-core/tests/integration/registry/conftest.py)",
+      "Edit(/ethera-eval-core/tests/integration/registry/test_manifest_concurrency.py)",
+      "Edit(/ethera-eval-core/tests/integration/registry/test_manifest_refusals.py)",
+      "Edit(/ethera-eval-core/tests/integration/registry/test_manifest_replace.py)",
+      "Edit(/ethera-eval-core/tests/integration/registry/test_manifest_validation_document.py)",
+      "Edit(/ethera-eval-core/tests/integration/registry/test_manifest_validation_schema.py)",
+      "Edit(/ethera-eval-core/tests/integration/registry/test_product_read.py)",
+      "Edit(/ethera-eval-core/tests/integration/registry/test_products_list.py)",
+      "Edit(/ethera-eval-core/tests/integration/registry/test_registry_audit.py)",
+      "Edit(/ethera-eval-core/tests/integration/registry/test_registry_never_log.py)",
+      "Edit(/ethera-eval-core/tests/integration/registry/test_registry_seed.py)",
+      "Edit(/ethera-eval-core/tests/integration/registry/test_registry_tenancy.py)"
     ]
   },
   "hooks": {
