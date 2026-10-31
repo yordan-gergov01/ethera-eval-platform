@@ -11,7 +11,7 @@ decision recorded in `CLAUDE.md`.
 | Term | Meaning | Code form | Forbidden synonyms | Owning module | Status |
 |---|---|---|---|---|---|
 | **Product** | An AI application Ethera runs for a client, identified by `client_id` + `project_id` | `Product` | App, Service, Bot (in code) | registry | accepted |
-| **Manifest** | The Product's `eval.yaml`: Model Bindings, sandbox target, Dataset, Metrics, gate, candidate policy, allowed providers | `Manifest` | Config, Settings | registry | accepted |
+| **Manifest** | The Product's `eval.yaml`: Model Bindings, sandbox target, Dataset, Metrics, gate, candidate policy, allowed providers; versioned (1, 2, …), each version immutable; each section is defined by the slice that first consumes it | `Manifest` | Config, Settings, Revision | registry | accepted (versioning: D-017) |
 | **Model Binding** | A role (generation, judge, embedding) bound to a provider and a **full model ID**, never an alias | `ModelBinding` | Model setting | registry | accepted |
 | **Golden** | One evaluation case: input, expected outcome (decision + rule), failure type, optional context | `Golden` | Test case, Example | evaluation | accepted |
 | **Dataset** | A versioned, immutable set of Goldens for one Product | `Dataset`, `DatasetVersion` | Test set | evaluation | accepted |
@@ -47,6 +47,13 @@ decision recorded in `CLAUDE.md`.
 User, Role, Permission — unchanged from template_core. Endpoints check Permissions, never
 Role names.
 
+| Term | Meaning | Code form | Forbidden synonyms | Owning module | Status |
+|---|---|---|---|---|---|
+| **Client** | An Ethera customer that owns Products; the tenant key, identified by `client_id` (a slug) | `Client` | Customer, Org (as names for Client, in code; the Trace source value `customer` is unaffected) | platform core | accepted (D-017) |
+| **Client Membership** | Grants one user access to one Client's data; no role bypasses it | `ClientMembership` | — | platform core | accepted (D-017) |
+
 ## Pairs where the UI word and the code word differ
 
-None yet. Each pair is recorded here and in the ledger once, the day it appears.
+| Domain word | Mechanism word | Where the mechanism word is allowed | Since |
+|---|---|---|---|
+| Client | tenant | the isolation mechanism only: the database row-security setting and tenant-isolation tests (D-014, D-017) | 2026-10-30 |

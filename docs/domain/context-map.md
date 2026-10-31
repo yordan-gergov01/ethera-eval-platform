@@ -1,20 +1,20 @@
 # Context map
 
-Source: brief §5 ("Candidate modules") and §7. The five bounded contexts are **candidates, to
-be confirmed at HUMAN GATE A**. No module package exists yet: each is created by the
-`add-module` skill in the slice that first needs it (import-linter refuses a contract that
-names a missing module).
+Source: brief §5 ("Candidate modules") and §7. Each bounded context is a **candidate** until
+the Gate B of the slice that first needs it accepts it (`registry`: D-017). Each module
+package is created by the `add-module` skill in that slice (import-linter refuses a contract
+that names a missing module).
 
 ## Contexts
 
 | Module | Owns | Table prefix | First slice | Status |
 |---|---|---|---|---|
-| `registry` | Products, Manifests, Model Bindings, allowed providers, owners | `reg_` | 001 | candidate |
+| `registry` | Products, Manifests, Model Bindings, allowed providers, owners (meaning open: OQ-002) | `reg_` | 001 | accepted (D-017) |
 | `evaluation` | Datasets, Goldens, Metrics (definitions), Eval Runs, Trials, Case Results | `eval_` | 002–003 | candidate |
 | `comparison` | Baselines, Comparisons, Gate Verdicts, Recommendations, Candidates (definition) | `cmp_` | 004 | candidate |
 | `model_watch` | Catalog snapshots, Model Changes, affected-Product selection, Candidate scheduling | `mw_` | 005 | candidate |
 | `notification` | Notifications, channels, weekly digest | `ntf_` | 006 | candidate |
-| platform core (`backend`) | Identity and access, messaging, audit, spend, health, settings, errors | template names | A1 | accepted |
+| platform core (`backend`) | Identity and access (incl. Clients and Client Memberships, D-017), messaging, audit, spend, health, settings, errors | template names | A1 | accepted |
 
 `runner` (Trial execution, Judges, Metric application) and `demo_target` (the product under
 test) are processes, not bounded contexts of the backend: they share no tables and talk only

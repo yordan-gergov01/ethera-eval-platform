@@ -30,8 +30,8 @@ In force from slice 001, the first slice with client-owned tables:
 
 - `client_id` is the tenant key of every client-owned table (Products, Datasets, Goldens,
   Eval Runs, spend rows); `NOT NULL`.
-- RLS ENABLE **and FORCE**; the app role is `NOBYPASSRLS`; `app.current_tenant` set per
-  request; explicit `client_id` filters in repositories too, and in JOINs.
+- RLS ENABLE **and FORCE**; the app role is `NOBYPASSRLS`; `app.current_tenants` (the set of
+  the caller's member Client IDs, D-022) set per request transaction; explicit `client_id` filters in repositories too, and in JOINs.
 - Ethera staff get explicit client memberships.
 - The migration owner holds `BYPASSRLS`, asserted at startup; cross-tenant paths are
   `SECURITY DEFINER` functions owned by it.

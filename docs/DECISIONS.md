@@ -199,6 +199,10 @@ the owner at a HUMAN GATE).
   never when `stop_hook_active` is true, so it cannot trap a session. Formats checked against
   the current Claude Code documentation (2026-10).
 - **Consequences:** Project agents and skills load in new sessions.
+- **Dated exception (owner, 2026-10-31):** Fable 5.1 needs usage credits the account does not
+  have, so the judging roles of slice 001 (`test-author`, `adjudicator`) run on `opus`. The
+  agent files keep `model: fable`; the override is passed per call and ends when credits
+  exist. The seal report of slice 001 states it.
 
 ### D-012: Product language (C6)
 
@@ -278,8 +282,8 @@ the owner at a HUMAN GATE).
   developed on a branch named like its spec folder (`001-product-registry`) and merged into
   `main` only after the full gate passes and on the owner's instruction. Claude stages and
   prepares the commit messages. Amended (owner, 2026-10-30): the owner moved `git commit` and
-  `git push` from deny to ask in `.claude/settings.json`; Claude runs them only on the owner's
-  instruction in the same turn, and the owner approves each prompt.
+  `git push` from deny to allow in `.claude/settings.json`; Claude still runs them only on the
+  owner's instruction in the same turn (the CLAUDE.md hard rule is the guard now).
 - **Consequences:** A root `.gitattributes` keeps LF in every checkout (the projects have
   their own). gitleaks is not yet active: `.pre-commit-config.yaml` lives in
   `ethera-eval-core/`, not at the repository root, so `pre-commit install` at the root has no
@@ -293,4 +297,42 @@ the owner at a HUMAN GATE).
 - **Consequences:** References to the Bible (CLAUDE.md, the constitution, the rules, the
   brief) point to a file a fresh clone does not have; no code, test or CI job reads it. Rules
   paraphrase it by part name and never copy it wholesale.
+
+### D-021: Two database roles — migration owner and runtime role
+
+- **Context:** D-014 requires a migration owner holding BYPASSRLS and an app role without it.
+  The template has one role that owns, migrates and serves (template D-001, "With more time:
+  split the role"); recon for slice 001 confirmed it (`specs/001-product-registry/research.md`).
+- **Decision (made by Claude, follows from D-014):** Split into a migration owner (owns the
+  schema, runs migrations and seeds, owns SECURITY DEFINER functions, BYPASSRLS) and a
+  runtime role (data grants only, NOBYPASSRLS; INSERT + SELECT on audit). Supersedes template
+  D-001's single role. Who holds the owner's credentials is Fork R2 at Gate B part 2.
+- **Consequences:** `test_application_role_owns_the_schema_without_superuser_rights` is
+  rewritten for two roles; local volumes are recreated once (`docker compose down -v`);
+  `.env.example`, compose and settings gain the second credential pair together.
+
+### D-022: Slice 001 contract approved — C-1..C-13, Forks R1 and R2 (Gate B part 2)
+
+- **Context:** `specs/001-product-registry/contract.md` and `research.md` put thirteen
+  contract-level choices and two infrastructure forks to the owner.
+- **Decision (owner, 2026-10-31, Gate B part 2):** The contract is approved with C-1 to C-13
+  as written, including C-11 (a document-level YAML problem is reported alone, an exception
+  to SC-004). Fork R1 = A: each request's transaction carries the set of the caller's member
+  Client IDs (`app.current_tenants`), and row security admits a row iff its `client_id` is
+  in that set. Fork R2 = A: the backend holds both credential pairs, migrates, seeds and
+  asserts role attributes on an owner connection under the startup lock, then serves on a
+  runtime-role pool; a one-shot migration service is the named production path.
+- **Consequences:** `.claude/rules/database.md` names `app.current_tenants`. The test-author
+  writes the sealed oracle from the approved contract.
+
+### D-023: Conventional Commits
+
+- **Decision (owner, 2026-10-31):** Commit messages follow Conventional Commits:
+  `<type>(<scope>): <summary>`, with type ∈ `feat`, `fix`, `chore`, `docs`, `test`,
+  `refactor`, `ci`, `build`, `perf`. The scope is the slice number (`001`) or the area
+  (`core`, `web`, `governance`). Examples: `test(001): seal the product-registry oracle`,
+  `feat(001): add the Products list endpoint`, `docs(001): record the contract approval`.
+  The body explains why; the `Co-Authored-By` trailer stays.
+- **Consequences:** Applies from 2026-10-31. The four foundation commits already pushed to
+  `main` keep their messages (rewriting pushed history is not worth it).
 
