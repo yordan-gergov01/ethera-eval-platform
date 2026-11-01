@@ -166,7 +166,8 @@ idempotent: a second start changes nothing (same versions, same `published_at`).
 
 - Versions are numbered 1, 2, … per Dataset, without gaps.
 - A published version never changes: after a later version is published, `GET …/versions/1`
-  answers exactly as before (bodies equal).
+  answers exactly as before (bodies equal), except `is_current`, which turns `false`
+  (erratum, owner 2026-11-01, D-025).
 - `is_current` is true only for the highest number.
 
 ### 3.3 Demo-target configuration, models and documents
@@ -336,7 +337,8 @@ underdetermined cases you did NOT seal. Cover in particular:
   `latency_ms` inside its model's range.
 - **Version boundaries:** `versions/1`, `versions/2` after an arranged version, `0`, `-1`,
   `01`, `1.0`, `abc`, `99999999999999999999` → the §2.2 answers.
-- **Immutability:** version 1's body before and after arranging version 2 is equal; the
+- **Immutability:** version 1's body before and after arranging version 2 is equal except
+  `is_current` (§3.2); the
   summary's `current_version` and counts follow the new version.
 - **Tenant isolation** on both endpoints, for a member of A only, an admin who is a member of B
   only, and a user with no memberships.

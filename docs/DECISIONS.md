@@ -374,3 +374,6 @@ the owner at a HUMAN GATE).
   response.
 - **Consequences:** The test-author writes the sealed oracle from the approved contract. The
   build follows R-201..R-207.
+- **Erratum (owner, 2026-11-01, at the seal commit):** §3.2 and §7 said version 1's body is
+  unchanged after version 2; `is_current` necessarily turns `false`. Both now say "equal except
+  `is_current`", which is what the oracle seals.

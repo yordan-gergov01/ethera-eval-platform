@@ -38,7 +38,16 @@
       "Edit(/ethera-eval-core/tests/integration/registry/test_registry_audit.py)",
       "Edit(/ethera-eval-core/tests/integration/registry/test_registry_never_log.py)",
       "Edit(/ethera-eval-core/tests/integration/registry/test_registry_seed.py)",
-      "Edit(/ethera-eval-core/tests/integration/registry/test_registry_tenancy.py)"
+      "Edit(/ethera-eval-core/tests/integration/registry/test_registry_tenancy.py)",
+      "Edit(/ethera-eval-core/tests/integration/evaluation/_contract_fixtures.py)",
+      "Edit(/ethera-eval-core/tests/integration/evaluation/_evaluation_oracle.py)",
+      "Edit(/ethera-eval-core/tests/integration/evaluation/conftest.py)",
+      "Edit(/ethera-eval-core/tests/integration/evaluation/test_dataset_seed.py)",
+      "Edit(/ethera-eval-core/tests/integration/evaluation/test_dataset_tenancy.py)",
+      "Edit(/ethera-eval-core/tests/integration/evaluation/test_dataset_versions.py)",
+      "Edit(/ethera-eval-core/tests/integration/evaluation/test_demo_target_chat.py)",
+      "Edit(/ethera-eval-core/tests/integration/evaluation/test_evaluation_never_log.py)",
+      "Edit(/ethera-eval-core/tests/integration/evaluation/test_scenario_matrix.py)"
     ]
   },
   "hooks": {
