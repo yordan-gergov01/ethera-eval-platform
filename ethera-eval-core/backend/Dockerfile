@@ -39,7 +39,7 @@ COPY requirements/dev.txt /tmp/requirements/dev.txt
 RUN pip install --require-hashes -r /tmp/requirements/dev.txt
 # The packages are used from the source tree, without installing the project.
 ENV PYTHONPATH=/app
-COPY pyproject.toml docker-compose.yml .env.example ./
+COPY pyproject.toml docker-compose.yml .env.example .dockerignore ./
 COPY docker/rabbitmq/provision-entrypoint.sh ./docker/rabbitmq/provision-entrypoint.sh
 COPY common_lib ./common_lib
 COPY backend ./backend

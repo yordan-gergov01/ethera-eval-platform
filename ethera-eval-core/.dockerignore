@@ -3,14 +3,16 @@
 *
 !backend/
 !common_lib/
+!evals/
 !runner/
 !migrations/
 !requirements/
 !tests/
 !pyproject.toml
-# Read by the configuration drift tests in the test image; none holds secrets.
+# Read by the configuration drift tests in the test image (and the build-context test, FIX-006); none holds secrets.
 !docker-compose.yml
 !.env.example
+!.dockerignore
 !docker/rabbitmq/provision-entrypoint.sh
 
 **/__pycache__/
