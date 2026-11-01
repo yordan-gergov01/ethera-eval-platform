@@ -28,6 +28,9 @@ decision recorded in `CLAUDE.md`.
 | **Recommendation** | switch, discuss or keep, from quality, cost and latency together | `Recommendation` | Suggestion | comparison | accepted |
 | **Model Change** | A detected change: released, alias moved, deprecation announced, price changed, latency changed | `ModelChange` | Update | model_watch | accepted |
 | **Notification** | A message asking a human to decide something, linked to the evidence | `Notification` | Alert (except as severity) | notification | accepted |
+| **Instruction set** | The versioned `.md` file of instructions a Product's generation model receives | `InstructionSet` | Prompt template (in code) | evaluation (as Golden context), demo target (as data) | accepted (D-024) |
+| **Retrieval mode** | How a Product finds documents: `keyword` or `semantic` | `RetrievalMode` | — | demo target; a Change kind from 003 | accepted (D-024) |
+| **Decision** | The action a Product's answer commits to, one value of the decision set | `Decision` | — | evaluation | accepted (D-024) |
 
 ## Value sets (accepted, from the brief)
 
@@ -41,6 +44,10 @@ decision recorded in `CLAUDE.md`.
 | Model Change kind | `released`, `alias_moved`, `deprecation_announced`, `price_changed`, `latency_changed` |
 | Flaky kind | `judge_flaky` (identical trial outputs), `product_flaky` (different outputs) |
 | Trace source | `customer`, `harness` |
+| Retrieval mode | `keyword`, `semantic` (D-024) |
+| Decision | `approve_return`, `deny_return`, `explain_return`, `approve_refund`, `deny_refund`, `report_status`, `answer_from_docs`, `escalate` (D-024) |
+| Failure type | `date_math`, `refund_rules`, `invented_facts`, `out_of_docs`, `retrieval_miss`, `order_status_tool` (D-024) |
+| Golden owner | `engineering`, `support_content` (D-024) |
 
 ## Identity and access (platform core, template terms)
 

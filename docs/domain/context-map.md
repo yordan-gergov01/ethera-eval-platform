@@ -9,8 +9,8 @@ that names a missing module).
 
 | Module | Owns | Table prefix | First slice | Status |
 |---|---|---|---|---|
-| `registry` | Products, Manifests, Model Bindings, allowed providers, owners (meaning open: OQ-002) | `reg_` | 001 | accepted (D-017) |
-| `evaluation` | Datasets, Goldens, Metrics (definitions), Eval Runs, Trials, Case Results | `eval_` | 002–003 | candidate |
+| `registry` | Products, Manifests, Model Bindings, allowed providers, Product owners (meaning open: OQ-002) | `reg_` | 001 | accepted (D-017) |
+| `evaluation` | Datasets, Goldens (with their owners, D-024), Metrics (definitions), Eval Runs, Trials, Case Results | `eval_` | 002–003 | accepted (D-024) |
 | `comparison` | Baselines, Comparisons, Gate Verdicts, Recommendations, Candidates (definition) | `cmp_` | 004 | candidate |
 | `model_watch` | Catalog snapshots, Model Changes, affected-Product selection, Candidate scheduling | `mw_` | 005 | candidate |
 | `notification` | Notifications, channels, weekly digest | `ntf_` | 006 | candidate |
@@ -43,7 +43,7 @@ them as modules appear.
                                   └──────────────┘
 ```
 
-- `evaluation → registry`: an Eval Run reads the Product and its Manifest.
+- `evaluation → registry` (confirmed, D-024): a Dataset belongs to a Product; an Eval Run reads the Product and its Manifest.
 - `comparison → evaluation, registry`: a Comparison reads two Eval Runs and the Manifest's
   cost and latency limits.
 - `model_watch → comparison, registry`: a Model Change selects Products and schedules

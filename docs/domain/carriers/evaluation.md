@@ -17,6 +17,16 @@ Trials, Case Results). Execution of Trials happens in `runner`; the rules below 
 - **Eval Run** — one Product configuration × one Dataset version × N Trials per Golden.
   N = 3 (accepted, brief §4 "every Golden runs three times").
 - **Trial** — tagged with source `harness` (accepted).
+- **Dataset** — one per Product (accepted, D-024 PP-208); version 1 created by the seed.
+- **Golden fields** (accepted, D-024): input, expected decision, rule (plain text naming the
+  policy and its source document), failure type, optional context, optional
+  `expected_numbers`, optional `owner` (`engineering` | `support_content`),
+  `unfixable_by_code` (true requires an owner other than `engineering`).
+- **Decision** value set (accepted, D-024 PP-202; global for the PoC): `approve_return`,
+  `deny_return`, `explain_return`, `approve_refund`, `deny_refund`, `report_status`,
+  `answer_from_docs`, `escalate`.
+- **Failure type** value set (accepted, D-024 PP-203): `date_math`, `refund_rules`,
+  `invented_facts`, `out_of_docs`, `retrieval_miss`, `order_status_tool`.
 
 ## Invariants
 
@@ -33,7 +43,7 @@ Trials, Case Results). Execution of Trials happens in `runner`; the rules below 
 
 ## Events (candidates)
 
-- `DatasetVersionPublished` — consumer: none planned → drop unless a slice gives it one.
+- `DatasetVersionPublished` — dropped (no consumer; slice 002, D-024).
 - `EvalRunRequested` — consumer: runner (via `EvalTrialBatchRequested` message). Proposed.
 - `TrialCompleted` — consumer: evaluation (stores results). Proposed; may be subsumed by the
   `TrialBatchCompleted` message.

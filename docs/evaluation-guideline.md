@@ -34,7 +34,8 @@ help-center documents and can look up order status through a tool (accepted, bri
 | `invented_facts` | `stays_in_docs` | `facts_used`, `retrieved_doc_ids` | `facts_used ⊆ retrieved documents` | accepted (metric); threshold proposed: no fact outside |
 | `out_of_docs` | `offers_human_when_unknown` | `decision`, `retrieved_doc_ids`, the Golden's expected decision | when the expected decision is "escalate", the answer offers a human and asserts no policy | accepted (metric); rule proposed |
 | (all) | `answer_relevancy` | `answer`, Golden `input` | lexical overlap of key terms ≥ threshold | accepted (metric); threshold proposed: 0.3 |
-| `order_status_tool` | `policy_correct` with tool context | `decision`, tool result | decision matches the tool's status | proposed (mapping) |
+| `order_status_tool` | `policy_correct` with tool context | `decision`, tool result | decision matches the tool's status | accepted (mapping, D-024) |
+| `retrieval_miss` | `policy_correct` | `decision`, expected decision + rule | the expected decision (e.g. `explain_return`), which needs the right document | accepted (mapping, D-024) |
 
 Each Metric reads only its declared fields; a test proves it (see `add-metric` skill).
 
@@ -55,7 +56,8 @@ Each Metric reads only its declared fields; a test proves it (see `add-metric` s
 |---|---|---|---|
 | "I bought these 5 weeks ago, can I return them?" | `deny_return` — returns within 30 days of delivery | "Sorry, the 30-day window has passed…" | "Yes, you can return them" (date math) |
 | "How do I send them back?" | `explain_return` — return policy doc | cites the return steps from the return-policy document | "I'm not sure" when the doc exists (retrieval miss) |
-| "Do you sell gift cards?" (no document exists) | `escalate` — out of docs; owner: support content team | offers a human, asserts nothing | invents a gift-card policy |
+| "Can I pay with crypto?" (no document exists) | `escalate` — out of docs | offers a human, asserts nothing | invents a payment policy |
+| "Do you sell gift cards?" (no document exists; unfixable by code, owner `support_content`) | `answer_from_docs` — needs a gift-card document the support content team must write | answers from a gift-card document | anything else: offering a human or inventing (D-024) |
 | "Where is order 1042?" | `report_status` — order tool | states the tool's status | states a status the tool did not return |
 
 ## Usefulness threshold (proposed)
