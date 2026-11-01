@@ -20,7 +20,7 @@ recorded in D-011 (owner, 2026-10-31).
 | `ethera-eval-core/tests/integration/registry/conftest.py` | `352284fc402d988469431f98f204892b4079204806401362489f368952bb4ddc` | — (`api` fixture) | — |
 | `ethera-eval-core/tests/integration/registry/test_manifest_concurrency.py` | `ef45799b386a2092f849e4f7243daffdab07ca6a93bd0105563b386e38dbc180` | 3 | §6 `started_platform_app` not provided |
 | `ethera-eval-core/tests/integration/registry/test_manifest_refusals.py` | `1838491fb705ea019299b48bb1675f1d7e0e3026c5f2cf94f6d6271f94e659c1` | 10 | same |
-| `ethera-eval-core/tests/integration/registry/test_manifest_replace.py` | `5ae8c6d2247789dd6625cfa722caf2ba3701bd092faa2a66a7f028b3eeba4424` | 32 | same |
+| `ethera-eval-core/tests/integration/registry/test_manifest_replace.py` | `cae8f138f2d7699d2d56b5fa93c676ffca6a442021e093f553291c17f02b075a` | 32 | same |
 | `ethera-eval-core/tests/integration/registry/test_manifest_validation_document.py` | `5703c9d263f51b7dafe19c0bcdaf3e4aaf53d6c8772fe08b4c11ac27f0c484c5` | 73 | same |
 | `ethera-eval-core/tests/integration/registry/test_manifest_validation_schema.py` | `33aeb8d8b032dbcf6f0ceb35fb9ff2eeb92cea6f318d7480ffc8788e2775dd2a` | 58 | same |
 | `ethera-eval-core/tests/integration/registry/test_product_read.py` | `6d5ecc01130f037ae24f0e99929404c78ff77dc2398e5083bf1a14562092a68c` | 16 | same |
@@ -32,6 +32,17 @@ recorded in D-011 (owner, 2026-10-31).
 
 **Hashes** are of the files as stored in Git (LF line endings, `.gitattributes`), the bytes
 a fresh clone has. Check with `sha256sum` after a checkout.
+
+## Re-seal (owner, 2026-10-31, FIX-001)
+
+One case in `test_manifest_replace.py` was defective. The `whitespace` parameter of
+`test_equal_manifest_returns_the_current_version_unchanged` doubled every indent and so
+produced text that is not YAML (PyYAML: `mapping values are not allowed here`); no correct
+implementation could return 200 for it. With the owner's approval the test author replaced
+only that expression with a whitespace-only variant that is valid YAML and loads to the same
+Manifest (re-indented blocks, trailing spaces, blank lines). No other line of any sealed file
+changed. The file's hash above is the re-sealed one; the original was
+`5ae8c6d2247789dd6625cfa722caf2ba3701bd092faa2a66a7f028b3eeba4424`.
 
 ## Soundness review (seal-oracle, 2026-10-31)
 

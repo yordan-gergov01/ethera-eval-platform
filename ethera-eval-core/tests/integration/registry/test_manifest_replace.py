@@ -107,7 +107,12 @@ async def test_reordered_bindings_make_a_new_version(api: AsyncClient) -> None:
 
 EQUAL_VARIANTS = {
     "comment": "# reviewed, nothing to change\n" + DEMO_DOCUMENT + "# end\n",
-    "whitespace": DEMO_DOCUMENT.replace("  ", "    ").replace("\n", "\n\n"),
+    "whitespace": (
+        DEMO_DOCUMENT.replace("\n  ", "\n    ")
+        .replace(":\n", ":   \n")
+        .replace("\nbindings", "\n\n\nbindings")
+        .replace("\nallowed_providers", "\n\nallowed_providers")
+    ),
     "quoting": DEMO_DOCUMENT.replace("acme", "'acme'").replace(
         "mock-gen-small-v1", '"mock-gen-small-v1"'
     ),
