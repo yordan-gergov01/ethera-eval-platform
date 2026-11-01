@@ -2,7 +2,7 @@
  * Profile page of the signed-in user.
  *
  * Role: shows username and role and composes ProfileForm and PasswordForm.
- * Used by: routes/router.tsx (profile, also the target of the '/' redirect).
+ * Used by: routes/router.tsx (profile).
  * Depends on: features/profile ProfileForm and PasswordForm, useAuth.
  * Key invariants: ProfileForm is keyed by the user id so its fields reset for another user; renders
  *   nothing while no user is loaded.

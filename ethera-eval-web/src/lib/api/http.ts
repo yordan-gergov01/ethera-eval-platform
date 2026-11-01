@@ -3,7 +3,8 @@
  *
  * Role: wires createApiClient to the runtime config and the token storage; lets the session
  *   provider register 401 and 403 handlers.
- * Used by: features/profile/api.ts, features/users/api.ts, providers/auth/session-api.ts,
+ * Used by: features/profile/api.ts, features/users/api.ts, features/registry/api.ts,
+ *   providers/auth/session-api.ts,
  *   providers/auth/AuthProvider.tsx (handlers), session-api.test.ts (mocked).
  * Depends on: ./client, config/runtime-config (backend URL), lib/token-storage (token).
  * Key invariants: every backend call in the app goes through `api`; base URL and token are read per

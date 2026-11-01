@@ -181,10 +181,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Products Route
+         * @description The Products of every Client you are a member of, by `client_id` then `project_id`.
+         */
+        get: operations["list_products_route_api_v1_products_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{client_id}/{project_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Product
+         * @description One Product with its current Manifest.
+         */
+        get: operations["read_product_api_v1_products__client_id___project_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{client_id}/{project_id}/manifest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace Product Manifest
+         * @description Replace the Manifest; an invalid one is a 422 `MANIFEST_INVALID` listing every problem.
+         */
+        put: operations["replace_product_manifest_api_v1_products__client_id___project_id__manifest_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * BindingRole
+         * @description The roles a Model Binding can have (glossary value set).
+         * @enum {string}
+         */
+        BindingRole: "generation" | "judge" | "embedding";
         /** Body_login_api_v1_auth_login_post */
         Body_login_api_v1_auth_login_post: {
             /** Grant Type */
@@ -235,7 +301,7 @@ export interface components {
          *     example `NotFoundError(code=ErrorCode.USER_NOT_FOUND)`.
          * @enum {string}
          */
-        ErrorCode: "AUTHENTICATION_FAILED" | "INVALID_CREDENTIALS" | "INVALID_TOKEN" | "PERMISSION_DENIED" | "NOT_FOUND" | "CONFLICT" | "BUSINESS_RULE_VIOLATION" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "DATABASE_UNAVAILABLE" | "BROKER_UNAVAILABLE" | "TOO_MANY_CONCURRENT_POLLS" | "USER_NOT_FOUND" | "USERNAME_TAKEN" | "EMAIL_TAKEN" | "SELF_MODIFICATION_FORBIDDEN" | "LAST_ADMIN_PROTECTED" | "WEAK_PASSWORD" | "INVALID_CURRENT_PASSWORD" | "MALFORMED_REQUEST" | "VALIDATION_FAILED" | "METHOD_NOT_ALLOWED" | "PAYLOAD_TOO_LARGE" | "HTTP_ERROR" | "INTERNAL_ERROR";
+        ErrorCode: "AUTHENTICATION_FAILED" | "INVALID_CREDENTIALS" | "INVALID_TOKEN" | "PERMISSION_DENIED" | "NOT_FOUND" | "CONFLICT" | "BUSINESS_RULE_VIOLATION" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "DATABASE_UNAVAILABLE" | "BROKER_UNAVAILABLE" | "TOO_MANY_CONCURRENT_POLLS" | "USER_NOT_FOUND" | "USERNAME_TAKEN" | "EMAIL_TAKEN" | "SELF_MODIFICATION_FORBIDDEN" | "LAST_ADMIN_PROTECTED" | "WEAK_PASSWORD" | "INVALID_CURRENT_PASSWORD" | "PRODUCT_NOT_FOUND" | "MANIFEST_VERSION_CONFLICT" | "MANIFEST_INVALID" | "MALFORMED_REQUEST" | "VALIDATION_FAILED" | "METHOD_NOT_ALLOWED" | "PAYLOAD_TOO_LARGE" | "HTTP_ERROR" | "INTERNAL_ERROR";
         /** FieldError */
         FieldError: {
             /** Field */
@@ -257,6 +323,45 @@ export interface components {
              * @enum {string}
              */
             database: "ok" | "unavailable";
+        };
+        /**
+         * ManifestReplace
+         * @description A replacement: the version being replaced and the new eval.yaml text.
+         */
+        ManifestReplace: {
+            /** Base Version */
+            base_version: number;
+            /** Document */
+            document: string;
+        };
+        /** ManifestResponse */
+        ManifestResponse: {
+            /** Version */
+            version: number;
+            /** Bindings */
+            bindings: components["schemas"]["ModelBindingResponse"][];
+            /** Allowed Providers */
+            allowed_providers: "mock"[];
+            /** Document */
+            document: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+        };
+        /** ModelBindingResponse */
+        ModelBindingResponse: {
+            role: components["schemas"]["BindingRole"];
+            /**
+             * Provider
+             * @constant
+             */
+            provider: "mock";
+            /** Model */
+            model: string;
         };
         /**
          * PasswordChange
@@ -282,7 +387,7 @@ export interface components {
          * @description A named capability that an endpoint can require.
          * @enum {string}
          */
-        Permission: "users:read" | "users:create" | "users:update";
+        Permission: "users:read" | "users:create" | "users:update" | "products:read" | "manifests:write";
         /**
          * ProblemDetails
          * @description Body of every error response (RFC 9457).
@@ -306,6 +411,42 @@ export interface components {
             request_id?: string | null;
             /** Errors */
             errors?: components["schemas"]["FieldError"][] | null;
+        };
+        /** ProductPageResponse */
+        ProductPageResponse: {
+            /** Items */
+            items: components["schemas"]["ProductSummaryResponse"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** ProductResponse */
+        ProductResponse: {
+            /** Client Id */
+            client_id: string;
+            /** Project Id */
+            project_id: string;
+            manifest: components["schemas"]["ManifestResponse"];
+        };
+        /** ProductSummaryResponse */
+        ProductSummaryResponse: {
+            /** Client Id */
+            client_id: string;
+            /** Project Id */
+            project_id: string;
+            /** Manifest Version */
+            manifest_version: number;
+            generation_binding: components["schemas"]["ModelBindingResponse"];
+            /**
+             * Changed At
+             * Format: date-time
+             */
+            changed_at: string;
+            /** Changed By */
+            changed_by: string;
         };
         /**
          * RoleDetails
@@ -1429,6 +1570,356 @@ export interface operations {
             };
             /** @description Missing permission */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Request body too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too many requests; see Retry-After */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unexpected error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The database or another dependency is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    list_products_route_api_v1_products_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductPageResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Missing permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Request body too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too many requests; see Retry-After */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unexpected error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The database or another dependency is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    read_product_api_v1_products__client_id___project_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                client_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Missing permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description No such Product, or the caller is not a member of its Client */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Request body too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too many requests; see Retry-After */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unexpected error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The database or another dependency is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    replace_product_manifest_api_v1_products__client_id___project_id__manifest_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                client_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManifestReplace"];
+            };
+        };
+        responses: {
+            /** @description Equal to the current Manifest; nothing changed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManifestResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Missing permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description No such Product, or the caller is not a member of its Client */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description `base_version` is not the current version */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

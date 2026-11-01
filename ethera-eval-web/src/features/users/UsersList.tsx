@@ -3,13 +3,15 @@
  *
  * Role: list view of the users feature, with a "Create user" link for users:create.
  * Used by: pages/UsersPage.tsx.
- * Depends on: ./use-users-page, ErrorMessage, useAuth().can, react-router Link.
+ * Depends on: ./use-users-page, ./labels (role labels), ErrorMessage, useAuth().can,
+ *   react-router Link.
  * Key invariants: while the next page loads the current one stays visible (aria-busy) and "Next" is
  *   disabled; the create link is hidden without users:create (cosmetic: the route guard and the
  *   backend also check).
  */
 import { Link } from 'react-router';
 
+import { roleLabel } from './labels';
 import { useUsersPage } from './use-users-page';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useAuth } from '@/providers/auth/auth-context';
@@ -53,7 +55,7 @@ export function UsersList() {
                 </td>
                 <td>{user.full_name}</td>
                 <td>{user.email}</td>
-                <td>{user.role}</td>
+                <td>{roleLabel(user.role)}</td>
                 <td>{user.is_active ? 'Active' : 'Inactive'}</td>
               </tr>
             ))}

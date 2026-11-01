@@ -1,7 +1,8 @@
 /**
  * Unit tests for parsing the backend's problem details.
  *
- * Role: proves toFieldErrors, parseRetryAfter and apiErrorFromResponse.
+ * Role: proves toFieldErrors, parseRetryAfter and apiErrorFromResponse (including the raw
+ *   `problems` list).
  * Used by: Vitest.
  * Depends on: ./errors.
  * Key invariants: pins that unknown codes are kept and that a body which is not problem details
@@ -85,6 +86,38 @@ describe('apiErrorFromResponse', () => {
       retryAfter: undefined,
       fieldErrors: { username: 'Too short' },
     });
+  });
+
+  it('keeps every problem with its full field path and type, in order', async () => {
+    const errors = [
+      { field: 'bindings[1].provider', message: 'Not known.', type: 'unknown_provider' },
+      { field: 'bindings[1].provider', message: 'Not allowed.', type: 'provider_not_allowed' },
+      { field: 'product.client_id', message: 'Mismatch.', type: 'product_mismatch' },
+    ];
+    const error = await apiErrorFromResponse(
+      problem({
+        title: 'Error',
+        status: 422,
+        detail: 'Refused.',
+        code: 'MANIFEST_INVALID',
+        errors,
+      }),
+    );
+
+    expect(error.problems).toEqual(errors);
+  });
+
+  it('has no problems when the body carries no errors list', async () => {
+    const error = await apiErrorFromResponse(
+      problem({
+        title: 'Error',
+        status: 409,
+        detail: 'Changed.',
+        code: 'MANIFEST_VERSION_CONFLICT',
+      }),
+    );
+
+    expect(error.problems).toEqual([]);
   });
 
   it('reads Retry-After and falls back to the X-Request-ID header', async () => {

@@ -4,8 +4,8 @@
  * Role: collects username, full name, email, password and role, posts them, then opens the new
  *   user's page.
  * Used by: pages/NewUserPage.tsx.
- * Depends on: ./api rolesQueryOptions, ./use-create-user, ErrorMessage, Field, toFormErrors,
- *   utils/validation, react-router useNavigate.
+ * Depends on: ./api rolesQueryOptions, ./labels roleLabel, ./use-create-user, ErrorMessage,
+ *   Field, toFormErrors, utils/validation, react-router useNavigate.
  * Key invariants: the role defaults to 'user' and the options come from GET /api/v1/roles;
  *   USERNAME_TAKEN, EMAIL_TAKEN and WEAK_PASSWORD are shown on their fields; text fields are
  *   trimmed, the password is sent as typed; client checks only save a round trip.
@@ -15,6 +15,7 @@ import { useState, type SubmitEvent } from 'react';
 import { useNavigate } from 'react-router';
 
 import { rolesQueryOptions } from './api';
+import { roleLabel } from './labels';
 import { useCreateUser } from './use-create-user';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Field } from '@/components/ui/Field';
@@ -161,7 +162,7 @@ export function CreateUserForm() {
           >
             {(roles.data ?? [{ name: role, permissions: [] }]).map(({ name }) => (
               <option key={name} value={name}>
-                {name}
+                {roleLabel(name)}
               </option>
             ))}
           </select>

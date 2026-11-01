@@ -3,7 +3,8 @@
  *
  * Role: admin editing of a user record; read-only without users:update.
  * Used by: features/users/UserDetail.tsx.
- * Depends on: ./api rolesQueryOptions, ./use-update-user, useAuth (user, can), changedFields,
+ * Depends on: ./api rolesQueryOptions, ./labels roleLabel, ./use-update-user, useAuth (user,
+ *   can), changedFields,
  *   utils/validation, toFormErrors, ErrorMessage, Field.
  * Key invariants: the whole fieldset is disabled without users:update; users cannot change their
  *   own role or active status (the backend refuses it too, the controls only make it visible); only
@@ -13,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState, type SubmitEvent } from 'react';
 
 import { rolesQueryOptions } from './api';
+import { roleLabel } from './labels';
 import { useUpdateUser } from './use-update-user';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Field } from '@/components/ui/Field';
@@ -140,7 +142,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
             >
               {(roles.data ?? [{ name: role }]).map(({ name }) => (
                 <option key={name} value={name}>
-                  {name}
+                  {roleLabel(name)}
                 </option>
               ))}
             </select>

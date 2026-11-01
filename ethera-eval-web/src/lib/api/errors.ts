@@ -4,12 +4,15 @@
  * Role: ApiError (the backend answered with an error), NetworkError (no answer) and the parsing
  *   helpers.
  * Used by: lib/api/client.ts, lib/api/form-errors.ts, lib/query-client.ts, lib/long-poll.ts,
- *   components/ui/ErrorMessage.tsx, features/auth/LoginForm.tsx, and their tests.
+ *   components/ui/ErrorMessage.tsx, features/auth/LoginForm.tsx,
+ *   features/registry/replace-outcome.ts, and their tests.
  * Depends on: FieldError and ProblemDetails from ./types; the Retry-After and X-Request-ID headers.
  * Key invariants: branch on `code`, never on `detail` (which is for people); unknown codes are
  *   kept; a body that is not problem details becomes code HTTP_ERROR; Retry-After is read in
  *   seconds only; the body's request_id wins over the X-Request-ID header; the first message per
- *   field wins.
+ *   field wins in `fieldErrors`, while `problems` keeps the body's `errors` list whole and in
+ *   order (full field paths, every type), because a refused Manifest reports several problems on
+ *   one field.
  */
 import type { FieldError, ProblemDetails } from './types';
 
@@ -25,6 +28,8 @@ export interface ApiErrorInit {
   retryAfter?: number | undefined;
   /** Validation messages by form field, for example `{ email: '...' }`. */
   fieldErrors?: Readonly<Record<string, string>>;
+  /** The body's `errors` list unchanged: full field paths, every entry, in order. */
+  problems?: readonly FieldError[];
 }
 
 /**
@@ -40,6 +45,7 @@ export class ApiError extends Error {
   readonly requestId: string | undefined;
   readonly retryAfter: number | undefined;
   readonly fieldErrors: Readonly<Record<string, string>>;
+  readonly problems: readonly FieldError[];
 
   constructor(init: ApiErrorInit) {
     super(init.detail);
@@ -50,6 +56,7 @@ export class ApiError extends Error {
     this.requestId = init.requestId;
     this.retryAfter = init.retryAfter;
     this.fieldErrors = init.fieldErrors ?? {};
+    this.problems = init.problems ?? [];
   }
 }
 
@@ -121,6 +128,7 @@ export async function apiErrorFromResponse(response: Response): Promise<ApiError
       requestId: body.request_id ?? headerRequestId,
       retryAfter,
       fieldErrors: toFieldErrors(body.errors),
+      problems: body.errors ?? [],
     });
   }
   return new ApiError({

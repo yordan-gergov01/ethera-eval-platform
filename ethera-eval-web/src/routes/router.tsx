@@ -7,7 +7,7 @@
  *   components/layout/AppShell, pages/*.
  * Key invariants: PROTECTED_PAGES is the single list that drives the routes, their permission
  *   guards and the navigation; only pages with a label appear in the navigation; '/' redirects to
- *   /profile; RouteErrorPage is the error element of every route.
+ *   /products (the landing page); RouteErrorPage is the error element of every route.
  */
 import type { ReactNode } from 'react';
 import { Navigate, createBrowserRouter } from 'react-router';
@@ -19,7 +19,10 @@ import type { Permission } from '@/lib/api/types';
 import { LoginPage } from '@/pages/LoginPage';
 import { NewUserPage } from '@/pages/NewUserPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { ProductPage } from '@/pages/ProductPage';
+import { ProductsPage } from '@/pages/ProductsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { ReplaceManifestPage } from '@/pages/ReplaceManifestPage';
 import { RouteErrorPage } from '@/pages/RouteErrorPage';
 import { UserDetailPage } from '@/pages/UserDetailPage';
 import { UsersPage } from '@/pages/UsersPage';
@@ -34,6 +37,17 @@ interface ProtectedPage {
 
 /** Pages for signed-in users. The same list drives the routes, their guards and the navigation. */
 const PROTECTED_PAGES: readonly ProtectedPage[] = [
+  { path: 'products', label: 'Products', permission: 'products:read', element: <ProductsPage /> },
+  {
+    path: 'products/:clientId/:projectId',
+    permission: 'products:read',
+    element: <ProductPage />,
+  },
+  {
+    path: 'products/:clientId/:projectId/manifest',
+    permission: 'manifests:write',
+    element: <ReplaceManifestPage />,
+  },
   { path: 'profile', label: 'Profile', element: <ProfilePage /> },
   { path: 'users', label: 'Users', permission: 'users:read', element: <UsersPage /> },
   { path: 'users/new', permission: 'users:create', element: <NewUserPage /> },
@@ -55,7 +69,7 @@ export const router = createBrowserRouter([
           {
             element: <AppShell navItems={navItems} />,
             children: [
-              { index: true, element: <Navigate to="/profile" replace /> },
+              { index: true, element: <Navigate to="/products" replace /> },
               ...PROTECTED_PAGES.map(({ path, permission, element }) => ({
                 path,
                 element: permission ? (

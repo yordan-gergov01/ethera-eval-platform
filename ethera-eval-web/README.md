@@ -166,7 +166,7 @@ form fields; other errors show a readable message and the request ID, which find
 the backend logs. A top-level error boundary replaces a blank page with a message.
 
 **Code layout.** `src/` is organised by feature (`features/auth`, `profile`, `users`,
-`prompts`, `llm-model`), each holding its components, hooks and API calls. Pages compose
+`registry`), each holding its components, hooks and API calls. Pages compose
 features; shared code lives in `components/`, `hooks/`, `lib/` (API client, generated types,
 query client), `utils/`, `config/` and `types/`; the session lives in `providers/auth/`.
 ESLint enforces the import rules: features never import each other, and shared code never

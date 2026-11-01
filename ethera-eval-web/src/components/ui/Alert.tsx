@@ -2,7 +2,8 @@
  * Red error box that screen readers announce when it appears.
  *
  * Role: shared presentational wrapper for error messages.
- * Used by: components/ui/ErrorMessage.tsx, features/auth/LoginForm.tsx.
+ * Used by: components/ui/ErrorMessage.tsx, features/auth/LoginForm.tsx,
+ *   features/registry/ReplaceManifestForm.tsx.
  * Depends on: React ReactNode; Tailwind utility classes (template_web D-007).
  * Key invariants: role="alert" is what makes screen readers announce the message; keep it.
  */

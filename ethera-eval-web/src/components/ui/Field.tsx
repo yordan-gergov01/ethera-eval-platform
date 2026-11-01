@@ -2,7 +2,8 @@
  * Labelled form control with an optional hint and error message.
  *
  * Role: shared accessible form field; the caller renders the control through a render prop.
- * Used by: features LoginForm, PasswordForm, ProfileForm, CreateUserForm, EditUserForm.
+ * Used by: features LoginForm, PasswordForm, ProfileForm, CreateUserForm, EditUserForm,
+ *   ReplaceManifestForm.
  * Depends on: React useId.
  * Key invariants: the control must spread the props it receives (id, aria-invalid,
  *   aria-describedby) so label, hint and error stay connected for screen readers; aria-describedby
