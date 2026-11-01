@@ -344,3 +344,33 @@ the owner at a HUMAN GATE).
 - **Consequences:** Applies from 2026-10-31. The four foundation commits already pushed to
   `main` keep their messages (rewriting pushed history is not worth it).
 
+
+### D-024: Slice 002 spec approved — Forks D1–D4 and PP-201–PP-211 (Gate B part 1)
+
+- **Context:** `specs/002-demo-target-and-dataset/spec.md` (revised after a domain-guard
+  review) put four forks and eleven proposed policies to the owner at HUMAN GATE B part 1.
+- **Decision (owner, 2026-11-01, Gate B part 1):** Option A for every fork — D1: the demo
+  target is built in 002 with its golden-sample and scenario-matrix tests, its compose service
+  arrives in 003 with the runner's sandbox launcher; D2: Goldens are seeded only, read-only API
+  and pages; D3: no Manifest change in 002, the target configuration joins the Manifest in
+  003; D4: two date-math Goldens keep brief §6.6 true as written (G1 arithmetic, G2
+  retrieval-dependent). PP-201 to PP-211 accepted as written. `evaluation` is accepted as a
+  bounded context (prefix `eval_`), with the edge `evaluation → registry`.
+- **Consequences:** DEVIATION (dated 2026-11-01, closed by slice 003): the demo target's
+  `POST /chat` has no production caller until the runner arrives; its tests are its only
+  callers meanwhile. The glossary gains Instruction set, Retrieval mode and Decision; the
+  context map gives Golden owners to `evaluation`; the evaluation guideline gains the
+  `retrieval_miss` row; the carrier records the accepted value sets. The contract returns to
+  the owner at Gate B part 2 before the oracle is written.
+
+### D-025: Slice 002 contract approved — C-201..C-214 (Gate B part 2)
+
+- **Context:** `specs/002-demo-target-and-dataset/contract.md` and `research.md` put fourteen
+  contract-level choices to the owner and reported seven reversible build decisions
+  (R-201..R-207).
+- **Decision (owner, 2026-11-01, Gate B part 2):** The contract is approved with C-201 to
+  C-214 as written, including the scenario matrix of §3.4 and the 19 seeded Goldens of §3.5.
+  C-210 settles PP-207's open point: the runner learns a model's prices from the demo target's
+  response.
+- **Consequences:** The test-author writes the sealed oracle from the approved contract. The
+  build follows R-201..R-207.

@@ -64,3 +64,6 @@ Phase A0 → A1 → **HUMAN GATE A** → slices 001-product-registry, 002-demo-t
 - 2026-10-31 — Slice 001 contract approved: C-1..C-13, R1 = client-set tenancy, R2 = backend holds owner credentials (Gate B part 2) ([D-022](docs/DECISIONS.md#d-022-slice-001-contract-approved--c-1c-13-forks-r1-and-r2-gate-b-part-2))
 - 2026-10-31 — EXCEPTION for slice 001 (owner): judging agents run on `opus`, Fable has no credits ([D-011](docs/DECISIONS.md#d-011-agentic-setup--spec-kit-rules-skills-agents-hooks))
 - 2026-10-31 — Conventional Commits: `type(scope): summary`, scope = slice or area (owner) ([D-023](docs/DECISIONS.md#d-023-conventional-commits))
+- 2026-11-01 — Slice 002 spec approved: Forks D1–D4 = A, PP-201–PP-211 accepted; `evaluation` accepted (Gate B part 1) ([D-024](docs/DECISIONS.md#d-024-slice-002-spec-approved--forks-d1d4-and-pp-201pp-211-gate-b-part-1))
+- 2026-11-01 — DEVIATION until slice 003: demo target `/chat` built without its production caller (the runner) ([D-024](docs/DECISIONS.md#d-024-slice-002-spec-approved--forks-d1d4-and-pp-201pp-211-gate-b-part-1))
+- 2026-11-01 — Slice 002 contract approved: C-201..C-214, scenario matrix and 19 seeded Goldens (Gate B part 2) ([D-025](docs/DECISIONS.md#d-025-slice-002-contract-approved--c-201c-214-gate-b-part-2))
