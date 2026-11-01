@@ -9,6 +9,8 @@ pwdlib[argon2]
 pydantic
 pydantic-settings
 pyjwt
+# Parses the pasted eval.yaml of a Manifest; safe loaders only (docs/DECISIONS.md D-018).
+pyyaml
 # Form parsing for the OAuth2 password login used by the docs "Authorize" button.
 python-multipart
 structlog
