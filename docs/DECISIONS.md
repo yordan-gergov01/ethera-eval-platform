@@ -246,6 +246,11 @@ the owner at a HUMAN GATE).
     `openTelObserverWorker()`, `record_cost()`, `register_enricher()`, keyed by `client.id`
     and `project.id`) as the adapter for the technical-log and metrics planes.
   - No dependency on the private `ethera-framework` repository.
+  - Model watching on the real web (owner, 2026-10-31): adapters behind the
+    `ModelCatalogSource` and `BenchmarkSource` ports that read providers' published model
+    lists, deprecation notices and prices on a schedule. The PoC uses deterministic fixture
+    catalogs behind the same ports, so a real adapter replaces the fixture without touching
+    the domain.
 
 ### D-017: Slice 001 spec approved — Forks B1–B4 and PP-001–PP-013 (Gate B part 1)
 
@@ -268,7 +273,10 @@ the owner at a HUMAN GATE).
   development pin.
 - **Decision (made by Claude, follows from D-017):** Add PyYAML to
   `requirements/backend.in`, recompiled with hashes in the order backend → runner → dev.
-  Only `yaml.safe_load` is used; any other loader is a defect. Parsing errors are reported by
+  Only PyYAML's `SafeLoader` is used: `yaml.parse` and `yaml.compose`
+  with `Loader=yaml.SafeLoader` (amended 2026-10-31), so anchors, tags, key types, duplicate
+  keys and depth can be seen before anything is built; nothing is ever constructed into
+  Python objects. Any other loader is a defect. Parsing errors are reported by
   position, never by echoing the submitted text.
 - **Consequences:** One new runtime package; the runner does not import it.
 
@@ -307,8 +315,8 @@ the owner at a HUMAN GATE).
   schema, runs migrations and seeds, owns SECURITY DEFINER functions, BYPASSRLS) and a
   runtime role (data grants only, NOBYPASSRLS; INSERT + SELECT on audit). Supersedes template
   D-001's single role. Who holds the owner's credentials is Fork R2 at Gate B part 2.
-- **Consequences:** `test_application_role_owns_the_schema_without_superuser_rights` is
-  rewritten for two roles; local volumes are recreated once (`docker compose down -v`);
+- **Consequences:** the pinned single-owner test is replaced by
+  `test_migration_owner_owns_the_schema_and_the_runtime_role_owns_nothing`; local volumes are recreated once (`docker compose down -v`);
   `.env.example`, compose and settings gain the second credential pair together.
 
 ### D-022: Slice 001 contract approved — C-1..C-13, Forks R1 and R2 (Gate B part 2)

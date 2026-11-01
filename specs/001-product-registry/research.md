@@ -11,7 +11,7 @@ forks for the owner at Gate B part 2. Anchors are relative to `ethera-eval-core/
   - runs the migrations (`backend/core/startup.py:61-66`);
   - holds the startup lock (`startup.py:37-46`);
   - serves every request (`backend/core/database.py:61-101`).
-  The test `test_application_role_owns_the_schema_without_superuser_rights`
+  The former test `test_application_role_owns_the_schema_without_superuser_rights`
   (`tests/integration/test_migrations.py:142-159`) pins this. The template named the split
   ("With more time", template D-001) and never built it.
 - **No row security.** There is no RLS policy, no tenant setting, no `BYPASSRLS` and no
