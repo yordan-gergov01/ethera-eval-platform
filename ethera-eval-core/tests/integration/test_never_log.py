@@ -9,6 +9,10 @@ Key invariants: the app is created INSIDE each test, after `capsys` replaced std
   handler writes into the capture; the capture is proven non-empty (anti-vacuity); every
   planted value — passwords, tokens, emails, full names, a query-string secret, the
   Authorization header — must be absent; the negative test proves a leak would be caught.
+  `test_logs_never_carry_a_username` (FIX-002) captures two full app starts — the admin seed
+  runs in the lifespan before any request, once creating the account and once finding it — and
+  failed logins, and proves the seed and login events were captured before asserting that no
+  username appears.
 """
 
 from collections.abc import Iterable
@@ -28,6 +32,11 @@ EMAIL = "never.logged.person@example.org"
 CHANGED_EMAIL = "still.never.logged@example.org"
 FULL_NAME = "Neverlogged Personname"
 QUERY_SECRET = "reset-token-never-logged-74"
+# Distinctive, already normalised (lower-case ASCII) usernames: "admin" would also match event
+# names, so it could prove nothing.
+SEEDED_ADMIN = "seedzq81admin"
+TYPED_UNKNOWN = "typedzq82nobody"
+CREATED_USER = "createdzq83user"
 
 
 def leaks(output: str, secrets: Iterable[str]) -> list[str]:
@@ -115,3 +124,56 @@ async def test_the_guard_detects_a_planted_leak(
     structlog.get_logger("leak").info("bad_line", note=f"contact {EMAIL}")
     output = capsys.readouterr().out
     assert leaks(output, [EMAIL, FULL_NAME]) == [EMAIL]
+
+
+async def _start_and_stop(settings: BackendSettings) -> AsyncClient:
+    """One full app start (migrations, admin seed) and shutdown, inside the log capture."""
+    app = create_app(settings)
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+    ):
+        return client
+
+
+async def test_logs_never_carry_a_username(
+    backend_settings: BackendSettings, capsys: pytest.CaptureFixture[str]
+) -> None:
+    settings = backend_settings.model_copy(update={"admin_username": SEEDED_ADMIN})
+    app = create_app(settings)
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+    ):
+        await client.post("/api/v1/auth/login", data={"username": TYPED_UNKNOWN, "password": "x"})
+        login = await client.post(
+            "/api/v1/auth/login", data={"username": SEEDED_ADMIN, "password": ADMIN_PASSWORD}
+        )
+        assert login.status_code == 200
+        auth = {"Authorization": f"Bearer {login.json()['access_token']}"}
+        created = await client.post(
+            "/api/v1/users",
+            headers=auth,
+            json={
+                "username": CREATED_USER,
+                "email": EMAIL,
+                "full_name": FULL_NAME,
+                "password": NEW_PASSWORD,
+                "role": "user",
+            },
+        )
+        assert created.status_code == 201
+        await client.post(
+            "/api/v1/auth/login", data={"username": CREATED_USER, "password": WRONG_PASSWORD}
+        )
+    # A second start on the same database: the seed now finds the existing admin account.
+    await _start_and_stop(settings)
+    output = capsys.readouterr().out
+
+    # Anti-vacuity: both seed branches and the failed logins were logged into the capture.
+    assert '"event": "admin_account_created"' in output
+    assert '"event": "admin_account_exists"' in output
+    assert output.count('"event": "login_failed"') == 2
+    usernames = [SEEDED_ADMIN, TYPED_UNKNOWN, CREATED_USER]
+    leaked_lines = [line for line in output.splitlines() if leaks(line, usernames)]
+    assert leaks(output, usernames) == [], leaked_lines

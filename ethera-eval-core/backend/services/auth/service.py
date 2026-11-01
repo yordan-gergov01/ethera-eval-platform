@@ -8,8 +8,10 @@ Depends on: `backend.core.tokens` (token types, `JwtTokenService`), `backend.dal
   `PasswordHasher` Protocol, `common_lib.permissions`, `common_lib.schemas.identity`,
   `common_lib.errors`.
 Key invariants: every login failure is the same 401 for the client and the real reason is
-  logged; an unknown username still costs a full password verification, and the active flag is
-  checked only after the password, so nothing reveals which accounts exist. The token only
+  logged, with the typed username's length only, never the username (FIX-002,
+  `test_logs_never_carry_a_username`); an unknown username still costs a full password
+  verification, and the active flag is checked only after the password, so nothing reveals
+  which accounts exist. The token only
   identifies the user: role and permissions are loaded fresh on every request, so a role change,
   a deactivation or a logout applies to the next request (template_core D-006). An outdated hash
   is upgraded on login. Covered by the 100% auth coverage gate (D-008).
@@ -124,7 +126,8 @@ class AuthService:
 
     @staticmethod
     def _reject_login(username: str, *, reason: str) -> NoReturn:
-        logger.warning("login_failed", username=username, reason=reason)
+        # The typed username is personal data (and may be a mistyped password): its length only.
+        logger.warning("login_failed", username_length=len(username), reason=reason)
         raise AuthenticationError(INVALID_CREDENTIALS_MESSAGE, code=ErrorCode.INVALID_CREDENTIALS)
 
     @staticmethod

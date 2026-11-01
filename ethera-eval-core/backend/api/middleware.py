@@ -14,7 +14,11 @@ Depends on: `backend.api.errors` (problem responses, rate limit headers),
   `common_lib.request_id`, `common_lib.errors.ErrorCode`, Starlette's ASGI types.
 Key invariants: everything a client can receive, including a 500 or a 413, is produced inside
   CORS, so a browser can read the status and the request ID. An unhandled exception is logged
-  exactly once with its chained traceback (template_core D-005). An incoming X-Request-ID is
+  exactly once, by the type names of its chain only: exception messages and tracebacks can
+  carry SQL bound parameters and other user data (observability.md never-log list; this
+  narrows template_core D-005). Log lines name the matched route template, never the raw path,
+  and no path at all when no route matched (FIX-003,
+  `test_unhandled_errors_log_neither_raw_paths_nor_exception_text`). An incoming X-Request-ID is
   reused only if valid. A 429 keeps its own rate limit headers. `/health` access lines are
   debug-level so they do not drown everything else.
 """
@@ -30,6 +34,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from backend.api.errors import (
     PAYLOAD_TOO_LARGE_DETAIL,
     RATE_LIMIT_LIMIT_HEADER,
+    exception_chain,
     internal_error_response,
     problem_response,
     rate_limit_headers,
@@ -86,7 +91,7 @@ class RequestContextMiddleware:
                 log(
                     "request",
                     method=scope["method"],
-                    path=scope["path"],
+                    **_route_fields(scope),
                     status=status_code,
                     duration_ms=round((time.perf_counter() - started) * 1000, 1),
                 )
@@ -127,7 +132,7 @@ class RateLimitHeadersMiddleware:
 class UnhandledErrorMiddleware:
     """Turns an exception no handler caught into a generic 500.
 
-    The exception is logged once, with its full chained traceback and the request
+    The exception is logged once, by the type names of its chain, with the request
     context. Without this, Starlette's outermost error handler would answer outside
     CORS and the request context, and the server would log the traceback again.
     """
@@ -150,8 +155,15 @@ class UnhandledErrorMiddleware:
 
         try:
             await self.app(scope, receive, tracking_send)
-        except Exception:
-            logger.exception("unhandled_exception", method=scope["method"], path=scope["path"])
+        except Exception as exc:
+            # Type names only: the message and traceback text may hold bound parameters.
+            logger.error(
+                "unhandled_exception",
+                method=scope["method"],
+                **_route_fields(scope),
+                error_type=type(exc).__name__,
+                error_chain=exception_chain(exc),
+            )
             if response_started:
                 # Headers are already sent; the connection is closed by the server.
                 return
@@ -202,6 +214,12 @@ class BodySizeLimitMiddleware:
             return message
 
         await self.app(scope, receive_limited, send)
+
+
+def _route_fields(scope: Scope) -> dict[str, str]:
+    """The matched route's template as `path`; nothing when no route matched."""
+    template = getattr(scope.get("route"), "path", None)
+    return {"path": template} if isinstance(template, str) else {}
 
 
 def _incoming_request_id(scope: Scope) -> str | None:

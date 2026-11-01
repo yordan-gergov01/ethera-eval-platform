@@ -2,12 +2,15 @@
 
 Role: pins backend.api.errors' database-unavailable handler as `backend.main.create_app` wires
   it: every driver error meaning "unreachable" is a 503 DATABASE_UNAVAILABLE problem with
-  Retry-After and CORS headers, logged once with its traceback; other failures stay 500.
+  Retry-After and CORS headers, logged once by the type names of its chain; other failures
+  stay 500.
 Used by: pytest (unit).
 Depends on: the autouse `_required_environment` from tests/unit/backend/conftest.py; a probe
   route that raises asyncpg, Tortoise and socket errors as the driver would. No services.
 Key invariants: no database is involved, the errors are raised directly; driver details never
-  reach the response; a query error or a bug is never disguised as unavailability.
+  reach the response or the logs (FIX-005,
+  `test_handled_server_errors_log_type_names_not_exception_text`); a query error or a bug is
+  never disguised as unavailability.
 """
 
 import json
@@ -22,6 +25,7 @@ from tortoise.exceptions import DBConnectionError, OperationalError
 
 from backend.core.settings import BackendSettings
 from backend.main import create_app
+from common_lib.errors import ServiceUnavailableError
 
 FRONTEND = "http://localhost:3000"
 
@@ -77,7 +81,7 @@ async def test_driver_details_stay_out_of_the_response() -> None:
     assert "111" not in str(body["detail"])
 
 
-async def test_unavailability_is_logged_once_with_its_traceback(
+async def test_unavailability_is_logged_once_with_its_exception_chain(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     app = build_app(UNAVAILABLE["connection lost"])
@@ -86,8 +90,51 @@ async def test_unavailability_is_logged_once_with_its_traceback(
     lines = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
     [logged] = [line for line in lines if line["event"] == "database_unavailable"]
     assert logged["level"] == "error"
-    assert logged["exception"][0]["exc_type"] == "ConnectionDoesNotExistError"
+    assert logged["error_chain"] == ["ConnectionDoesNotExistError"]
     assert not [line for line in lines if line["event"] == "unhandled_exception"]
+
+
+PLANTED = "planted-zq83 value out of int64 range for $2"
+
+
+def _service_unavailable_from_planted_cause() -> Exception:
+    try:
+        raise pg.DataError(PLANTED)
+    except pg.DataError as cause:
+        raise ServiceUnavailableError() from cause
+
+
+@pytest.mark.parametrize(
+    ("raise_error", "event", "chain"),
+    [
+        (
+            lambda: pg.ConnectionDoesNotExistError(PLANTED),
+            "database_unavailable",
+            ["ConnectionDoesNotExistError"],
+        ),
+        (
+            _service_unavailable_from_planted_cause,
+            "request_failed",
+            ["ServiceUnavailableError", "DataError"],
+        ),
+    ],
+)
+async def test_handled_server_errors_log_type_names_not_exception_text(
+    capsys: pytest.CaptureFixture[str],
+    raise_error: Callable[[], Exception],
+    event: str,
+    chain: list[str],
+) -> None:
+    status, _, _ = await call(build_app(raise_error))
+
+    output = capsys.readouterr().out
+    lines = [json.loads(line) for line in output.splitlines()]
+    [logged] = [line for line in lines if line["event"] == event]
+    assert status == 503
+    assert logged["error_chain"] == chain
+    # Driver messages carry hosts and SQL bound parameters (FIX-005): never logged.
+    assert PLANTED not in output
+    assert "exception" not in logged
 
 
 @pytest.mark.parametrize(
