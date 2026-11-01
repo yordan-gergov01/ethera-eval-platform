@@ -15,7 +15,9 @@ Key invariants: there is no delete — accounts are deactivated, never deleted (
   become the same 409 the service raises after its own check. Bulk updates set `updated_at`
   explicitly (they skip auto_now). The password change and logout bump `token_version` in the
   database, atomically. `Credentials` never leave the service layer. The advisory lock ID
-  differs from the startup lock's.
+  differs from the startup lock's. An offset beyond int8 is capped at `MAX_SQL_OFFSET`, so it
+  reads an empty page instead of failing (FIX-004,
+  `test_list_offset_beyond_int64_answers_empty_page_not_500`).
 """
 
 from dataclasses import dataclass
@@ -29,6 +31,10 @@ from tortoise.transactions import in_transaction
 
 from common_lib.errors import ConflictError, ErrorCode
 from common_lib.models import Role, User
+
+# The largest OFFSET PostgreSQL accepts (int8). The API admits any offset >= 0; a larger one
+# is capped here, where it can only mean "past the end" (FIX-004).
+MAX_SQL_OFFSET = 2**63 - 1
 
 USERNAME_TAKEN_MESSAGE = "This username is already in use."
 EMAIL_TAKEN_MESSAGE = "This email address is already in use."
@@ -127,6 +133,11 @@ class UserRepository:
             raise duplicate_error(taken) from exc
         return created.id
 
+    async def get_user_id(self, username: str) -> UUID | None:
+        """The ID of the account with this (normalised) username, if any."""
+        user = await User.get_or_none(username=username).only("id")
+        return None if user is None else user.id
+
     async def get_credentials(self, username: str) -> Credentials | None:
         """Look up the stored credentials of a (normalised) username."""
         user = await User.get_or_none(username=username)
@@ -191,7 +202,7 @@ class UserRepository:
             await User.all()
             .select_related("role")
             .order_by("created_at", "id")
-            .offset(offset)
+            .offset(min(offset, MAX_SQL_OFFSET))
             .limit(limit)
         )
         return [_record(user) for user in users]

@@ -17,6 +17,8 @@ services:
       POSTGRES_DB: ethera_eval_test
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: test-only-not-a-secret
+      POSTGRES_OWNER_USER: ethera_eval_owner
+      POSTGRES_OWNER_PASSWORD: test-only-not-a-secret
       POSTGRES_APP_USER: ethera_eval_app
       POSTGRES_APP_PASSWORD: test-only-not-a-secret
     volumes:

@@ -1,7 +1,7 @@
 """The default grants match the agreed permission table exactly.
 
 Role: pins common_lib.permissions `DEFAULT_ROLE_GRANTS` against an explicit expected table:
-  every permission and every role is covered, plain users hold no permission yet, and the
+  every permission and every role is covered, plain users hold only `products:read`, and the
   permission codes are stable lowercase strings.
 Used by: pytest (unit).
 Depends on: nothing beyond the module under test; no fixtures or services.
@@ -16,6 +16,8 @@ EXPECTED_GRANTS = {
     Permission.USERS_READ: {RoleName.ADMIN},
     Permission.USERS_CREATE: {RoleName.ADMIN},
     Permission.USERS_UPDATE: {RoleName.ADMIN},
+    Permission.PRODUCTS_READ: {RoleName.ADMIN, RoleName.USER},
+    Permission.MANIFESTS_WRITE: {RoleName.ADMIN},
 }
 
 
@@ -35,9 +37,9 @@ def test_grants_match_the_permission_table() -> None:
     assert actual == EXPECTED_GRANTS
 
 
-def test_plain_users_hold_no_permission_yet() -> None:
-    # Features that plain users may use add their grants with them.
-    assert DEFAULT_ROLE_GRANTS[RoleName.USER] == frozenset()
+def test_plain_users_hold_only_products_read() -> None:
+    # Features that plain users may use add their grants with them (PP-003, slice 001).
+    assert DEFAULT_ROLE_GRANTS[RoleName.USER] == frozenset({Permission.PRODUCTS_READ})
 
 
 def test_permission_codes_are_stable_strings() -> None:

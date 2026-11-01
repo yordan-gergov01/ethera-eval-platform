@@ -3,8 +3,8 @@
 Role: the only place that knows how application errors map to HTTP. Every error response,
   including FastAPI's own (unknown route, wrong method, invalid body), has the same shape:
   `type`, `title`, `status`, `detail`, `instance`, `code`, `request_id`, and `errors` for
-  field-level validation problems. Also builds the X-RateLimit-* headers and the OpenAPI
-  description of error responses.
+  field-level validation problems and for an `InvalidFieldsError`'s problems. Also builds the
+  X-RateLimit-* headers and the OpenAPI description of error responses.
 Used by: `backend.main` (handlers, header names), `backend.api.middleware`,
   `backend.api.v1.router` and the routers in `backend.api.v1` (`documented_problem`).
 Depends on: `common_lib.errors` (the error classes and `ErrorCode`), FastAPI/Starlette, structlog.
@@ -12,7 +12,10 @@ Key invariants: services raise by meaning and know nothing about HTTP (template_
   `_STATUS_BY_ERROR` lists subclasses before their bases. Validation errors never echo the
   rejected input (it may be a password). Database-unavailable driver errors are passed in by the
   factory, so this module never imports the database libraries; they become a 503 with
-  Retry-After. X-RateLimit-Reset is in seconds, like Retry-After, not a timestamp.
+  Retry-After. Server-side errors (503, 5xx) are logged by the type names of their chain only,
+  never their messages or tracebacks (FIX-005,
+  `test_handled_server_errors_log_type_names_not_exception_text`). X-RateLimit-Reset is in
+  seconds, like Retry-After, not a timestamp.
 """
 
 from collections.abc import Iterable, Mapping, Sequence
@@ -32,6 +35,7 @@ from common_lib.errors import (
     BusinessRuleError,
     ConflictError,
     ErrorCode,
+    InvalidFieldsError,
     NotFoundError,
     PermissionDeniedError,
     RateLimitExceededError,
@@ -162,10 +166,25 @@ def register_exception_handlers(
         app.add_exception_handler(error_type, _handle_database_unavailable)
 
 
+def exception_chain(exc: BaseException) -> list[str]:
+    """The type names of the exception and its causes and contexts, outermost first."""
+    names: list[str] = []
+    current: BaseException | None = exc
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        names.append(type(current).__name__)
+        current = current.__cause__ or current.__context__
+    return names
+
+
 async def _handle_database_unavailable(request: Request, exc: Exception) -> JSONResponse:
-    # A dependency is down, not a bug in the request: logged with the full traceback,
-    # answered with 503 and a hint when to retry.
-    logger.error("database_unavailable", exc_info=exc)
+    # A dependency is down, not a bug in the request: logged by type names only (driver
+    # messages can carry hosts and bound parameters, FIX-005), answered with 503 and a hint
+    # when to retry.
+    logger.error(
+        "database_unavailable", error_type=type(exc).__name__, error_chain=exception_chain(exc)
+    )
     return problem_response(
         status=HTTPStatus.SERVICE_UNAVAILABLE,
         code=ErrorCode.DATABASE_UNAVAILABLE,
@@ -191,7 +210,14 @@ async def _handle_app_error(request: Request, exc: AppError) -> JSONResponse:
         headers["Retry-After"] = str(UNAVAILABLE_RETRY_AFTER_SECONDS)
 
     if status >= HTTPStatus.INTERNAL_SERVER_ERROR:
-        logger.error("request_failed", status=status, code=exc.code, exc_info=exc)
+        # Type names only: the error's cause may be a driver error carrying user data (FIX-005).
+        logger.error(
+            "request_failed",
+            status=status,
+            code=exc.code,
+            error_type=type(exc).__name__,
+            error_chain=exception_chain(exc),
+        )
     else:
         _log_rejection(status, exc.code)
 
@@ -201,8 +227,19 @@ async def _handle_app_error(request: Request, exc: AppError) -> JSONResponse:
         detail=exc.message,
         instance=request.url.path,
         request_id=_request_id(request),
+        errors=_field_errors(exc),
         headers=headers,
     )
+
+
+def _field_errors(exc: AppError) -> list[FieldError] | None:
+    # Location, fixed message and kind only: the refused input is never echoed.
+    if not isinstance(exc, InvalidFieldsError):
+        return None
+    return [
+        FieldError(field=problem.field, message=problem.message, type=problem.type)
+        for problem in exc.problems
+    ]
 
 
 async def _handle_validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:

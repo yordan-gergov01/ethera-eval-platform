@@ -2,7 +2,8 @@
 
 Role: pins backend.core.startup `apply_migrations` under `startup_lock` and the schema the
   migrations/ package produces: exactly the expected indexes, unlogged rate-limit counters,
-  pgvector present after startup, the app role owning the schema without superuser rights.
+  pgvector present after startup, the migration owner owning every table while the runtime role
+  owns nothing, neither with superuser rights (D-021), and the tenant-set function.
 Used by: pytest (integration — needs the test database).
 Depends on: `fresh_database` from tests/integration/conftest.py, whose superuser has already
   created the vector extension, as in production; the migration files in migrations/.
@@ -18,6 +19,7 @@ import asyncpg
 
 from backend.core.settings import DatabaseSettings
 from backend.core.startup import apply_migrations, startup_lock
+from tests.integration.conftest import connect_as_owner
 
 
 async def run_startup_tasks(settings: DatabaseSettings) -> None:
@@ -41,6 +43,11 @@ EXPECTED_INDEXES = {
     ("users", "users_email_key", "(email)"),
     ("role_permissions", "uidx_role_permis_role_id_6a25fe", "(role_id, permission_id)"),
     ("rate_limit_counters", "rate_limit_counters_pkey", "(key, window_start)"),
+    ("clients", "clients_pkey", "(id)"),
+    ("clients", "clients_client_id_key", "(client_id)"),
+    ("client_memberships", "client_memberships_pkey", "(id)"),
+    ("client_memberships", "uid_client_memb_user_id_59cbb3", "(user_id, client_id)"),
+    ("audit_rows", "audit_rows_pkey", "(id)"),
 }
 # The application creates no non-unique index yet.
 NON_UNIQUE_INDEXES: set[str] = set()
@@ -57,7 +64,8 @@ async def _connect(settings: DatabaseSettings) -> asyncpg.Connection:
 
 
 async def _applied_migrations(settings: DatabaseSettings) -> list[asyncpg.Record]:
-    connection = await _connect(settings)
+    # The migration ledger is the owner's: the runtime role has no grant on it.
+    connection = await connect_as_owner(settings)
     try:
         return await connection.fetch(
             "SELECT name, applied_at FROM tortoise_migrations ORDER BY id"
@@ -139,21 +147,58 @@ async def test_a_second_startup_changes_nothing(fresh_database: DatabaseSettings
     assert await _applied_migrations(fresh_database) == before
 
 
-async def test_application_role_owns_the_schema_without_superuser_rights(
+async def test_migration_owner_owns_the_schema_and_the_runtime_role_owns_nothing(
+    fresh_database: DatabaseSettings,
+) -> None:
+    # Rewritten for two roles (D-021): it replaces the template's single-role pin
+    # `test_application_role_owns_the_schema_without_superuser_rights`.
+    await run_startup_tasks(fresh_database)
+
+    connection = await _connect(fresh_database)
+    try:
+        roles = await connection.fetch(
+            "SELECT rolname, rolsuper FROM pg_roles WHERE rolname = ANY($1::text[])",
+            [fresh_database.db_user, fresh_database.db_owner_user],
+        )
+        owners = await connection.fetch(
+            "SELECT DISTINCT tableowner FROM pg_tables WHERE schemaname = 'public'"
+        )
+        runtime_owns = await connection.fetchval(
+            "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+            "WHERE n.nspname = 'public' AND c.relowner = "
+            "(SELECT oid FROM pg_roles WHERE rolname = current_user)"
+        )
+        schema_owner = await connection.fetchval(
+            "SELECT pg_get_userbyid(nspowner) FROM pg_namespace WHERE nspname = 'public'"
+        )
+    finally:
+        await connection.close()
+
+    assert {row["rolname"]: row["rolsuper"] for row in roles} == {
+        fresh_database.db_user: False,
+        fresh_database.db_owner_user: False,
+    }
+    assert [row["tableowner"] for row in owners] == [fresh_database.db_owner_user]
+    assert runtime_owns == 0
+    # PostgreSQL 15+: the public schema belongs to the database owner, the migration owner.
+    assert schema_owner == "pg_database_owner"
+
+
+async def test_tenant_set_function_is_empty_when_unset_or_cleared(
     fresh_database: DatabaseSettings,
 ) -> None:
     await run_startup_tasks(fresh_database)
 
     connection = await _connect(fresh_database)
     try:
-        is_superuser = await connection.fetchval(
-            "SELECT rolsuper FROM pg_roles WHERE rolname = current_user"
-        )
-        owners = await connection.fetch(
-            "SELECT DISTINCT tableowner FROM pg_tables WHERE schemaname = 'public'"
-        )
+        unset = await connection.fetchval("SELECT app_current_tenants()")
+        async with connection.transaction():
+            await connection.execute("SELECT set_config('app.current_tenants', 'b,a', true)")
+            inside = await connection.fetchval("SELECT app_current_tenants()")
+        cleared = await connection.fetchval("SELECT app_current_tenants()")
     finally:
         await connection.close()
 
-    assert is_superuser is False
-    assert [row["tableowner"] for row in owners] == [fresh_database.db_user]
+    assert unset == []
+    assert inside == ["b", "a"]
+    assert cleared == []

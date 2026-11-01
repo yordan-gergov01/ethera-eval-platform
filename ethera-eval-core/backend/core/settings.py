@@ -1,13 +1,17 @@
 """Typed settings of the backend, read once from environment variables at startup.
 
-Role: `DatabaseSettings` (PostgreSQL connection) and `BackendSettings` (everything the backend
+Role: `DatabaseSettings` (PostgreSQL connection: the runtime role that serves requests and the
+  migration owner that migrates and seeds) and `BackendSettings` (everything the backend
   service needs: JWT, admin account, API docs, CORS, body limit, trusted proxies, rate limits,
   plus the broker settings).
 Used by: `backend.main`, `backend.core.database`, `backend.core.startup`,
   `backend.core.job_waiter`, and the `backend` barrel (`evals.app`, `evals.migration_cli`).
 Depends on: `common_lib.settings` (`ServiceSettings`, `BrokerSettings`),
   `common_lib.schemas.identity` and `common_lib.schemas.password` (admin account validation).
-Key invariants: `DatabaseSettings` stands alone for the migration command line. The JWT secret
+Key invariants: `DatabaseSettings` stands alone for the migration command line. `db_user` is
+  always the runtime role (NOBYPASSRLS, data grants only); the migration owner's pair is
+  separate, must name another role, and is reached only through `for_owner()` (D-021, D-022
+  Fork R2 = A). The JWT secret
   must be at least 32 bytes (RFC 7518 for HS256). The admin password must pass the password
   policy; the admin account is created on first start only and never updated from these values.
   CORS origins are explicit (no wildcard, path or trailing slash) and trusted proxies are IP
@@ -17,9 +21,9 @@ Key invariants: `DatabaseSettings` stands alone for the migration command line. 
 
 import ipaddress
 import re
-from typing import Annotated
+from typing import Annotated, Self
 
-from pydantic import Field, SecretStr, ValidationInfo, field_validator
+from pydantic import Field, SecretStr, ValidationInfo, field_validator, model_validator
 from pydantic_settings import NoDecode
 
 from common_lib.schemas.identity import Email, Username
@@ -33,16 +37,36 @@ MIN_JWT_SECRET_BYTES = 32
 
 
 class DatabaseSettings(ServiceSettings):
-    """Connection to PostgreSQL. Also used on its own by the migration command line."""
+    """Connection to PostgreSQL. Also used on its own by the migration command line.
+
+    `db_user` is the runtime role every request uses; `db_owner_user` is the migration owner
+    used only at startup, under the startup lock (D-021).
+    """
 
     db_host: str = "postgres"
     db_port: int = Field(default=5432, ge=1, le=65535)
     db_name: str
     db_user: str
     db_password: SecretStr
+    # The migration owner: owns the schema, runs migrations and seeds, holds BYPASSRLS.
+    db_owner_user: str
+    db_owner_password: SecretStr
     # Upper bound of each replica's connection pool. Replicas x pool size must stay
     # below PostgreSQL's max_connections (100 by default).
     db_pool_max_size: int = Field(default=10, ge=1, le=100)
+
+    @model_validator(mode="after")
+    def _owner_is_another_role(self) -> Self:
+        # One role for both would put BYPASSRLS on every request (D-014).
+        if self.db_owner_user == self.db_user:
+            raise ValueError("db_owner_user must name another role than db_user")
+        return self
+
+    def for_owner(self) -> Self:
+        """The same settings with the migration owner's credentials as the connecting role."""
+        return self.model_copy(
+            update={"db_user": self.db_owner_user, "db_password": self.db_owner_password}
+        )
 
 
 class BackendSettings(DatabaseSettings, BrokerSettings):

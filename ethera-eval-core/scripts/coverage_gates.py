@@ -11,8 +11,9 @@ Depends on: the standard library; a report from `pytest --cov --cov-report=json:
 Key invariants: a listed critical path that is missing from the report FAILS (a deleted or
   renamed auth module must not silently leave the gate); the domain gate applies per module
   package, so one well-tested module cannot hide another; `--raise-floor` only ever raises
-  the floor. New tenancy and audit modules are appended to CRITICAL_PATHS when they exist
-  (docs/DECISIONS.md D-008, D-010).
+  the floor. Tenancy and audit modules, and every `evals/*/services/access.py` membership gate
+  (`test_critical_paths_include_every_membership_gate`), are in CRITICAL_PATHS since slice 001;
+  new ones are appended (docs/DECISIONS.md D-008, D-010).
 """
 
 import argparse
@@ -27,7 +28,7 @@ CRITICAL_THRESHOLD = 100.0
 DOMAIN_THRESHOLD = 90.0
 FLOOR_FILE = Path(__file__).resolve().parents[1] / ".coverage-floor"
 
-# Authentication and authorization; tenancy and audit modules join when they exist.
+# Authentication, authorization, tenancy and audit.
 CRITICAL_PATHS: tuple[str, ...] = (
     "backend/services/auth/",
     "backend/core/security.py",
@@ -35,6 +36,15 @@ CRITICAL_PATHS: tuple[str, ...] = (
     "backend/api/dependencies/auth.py",
     "backend/api/dependencies/permissions.py",
     "common_lib/permissions.py",
+    # Tenancy and audit (slice 001, D-008, D-010, D-022).
+    "backend/dal/tenancy/",
+    "backend/dal/clients/",
+    "backend/services/clients/",
+    "backend/dal/audit/",
+    "backend/services/audit/",
+    "common_lib/audit.py",
+    # Each domain module's membership gate (slice 001, D-014): the authorization of its use cases.
+    "evals/registry/services/access.py",
 )
 
 

@@ -7,10 +7,12 @@ Used by: pytest (unit).
 Depends on: local fakes `FakeGrants`, `FakeAccounts`, `FakeHasher` in place of the role and
   user repositories and the password hasher. No services.
 Key invariants: an existing admin is never overwritten; seeding twice creates the admin once;
-  the plain password never reaches the stored hash.
+  the plain password never reaches the stored hash; the seed returns the admin account's ID
+  (None when the admin username names no account), the actor of module seeds.
 """
 
 from collections.abc import Iterable, Mapping
+from uuid import UUID, uuid4
 
 from pydantic import SecretStr
 
@@ -36,6 +38,7 @@ class FakeAccounts:
     def __init__(self, existing: set[tuple[str, str]] | None = None) -> None:
         self.existing = existing or set()
         self.created: list[NewUser] = []
+        self.ids = {username: uuid4() for username, _ in self.existing}
 
     async def exists(self, *, username: str, email: str) -> bool:
         return any(u == username or e == email for u, e in self.existing)
@@ -43,7 +46,11 @@ class FakeAccounts:
     async def create(self, user: NewUser) -> object:
         self.created.append(user)
         self.existing.add((user.username, user.email))
-        return object()
+        self.ids[user.username] = uuid4()
+        return self.ids[user.username]
+
+    async def get_user_id(self, username: str) -> UUID | None:
+        return self.ids.get(username)
 
 
 class FakeHasher:
@@ -97,3 +104,28 @@ async def test_seeding_twice_creates_the_admin_once() -> None:
     await service.seed(ADMIN)
 
     assert len(accounts.created) == 1
+
+
+async def test_seed_returns_the_id_of_the_created_admin() -> None:
+    accounts = FakeAccounts()
+
+    admin_id = await SeedingService(FakeGrants(), accounts, FakeHasher()).seed(ADMIN)
+
+    assert admin_id == accounts.ids["admin"]
+
+
+async def test_seed_returns_the_id_of_an_existing_admin() -> None:
+    accounts = FakeAccounts(existing={("admin", "admin@example.com")})
+
+    admin_id = await SeedingService(FakeGrants(), accounts, FakeHasher()).seed(ADMIN)
+
+    assert admin_id == accounts.ids["admin"]
+
+
+async def test_seed_returns_none_when_the_email_belongs_to_another_account() -> None:
+    accounts = FakeAccounts(existing={("someone", "admin@example.com")})
+
+    admin_id = await SeedingService(FakeGrants(), accounts, FakeHasher()).seed(ADMIN)
+
+    assert admin_id is None
+    assert accounts.created == []

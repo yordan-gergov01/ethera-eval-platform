@@ -19,6 +19,8 @@ def _required_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DB_NAME", "unit_tests")
     monkeypatch.setenv("DB_USER", "unit_tests")
     monkeypatch.setenv("DB_PASSWORD", "test-only-not-a-secret")
+    monkeypatch.setenv("DB_OWNER_USER", "unit_tests_owner")
+    monkeypatch.setenv("DB_OWNER_PASSWORD", "test-only-not-a-secret-owner")
     monkeypatch.setenv("JWT_SECRET", TEST_JWT_SECRET)
     monkeypatch.setenv("ADMIN_USERNAME", "admin")
     monkeypatch.setenv("ADMIN_EMAIL", "admin@example.com")

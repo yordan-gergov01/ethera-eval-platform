@@ -3,7 +3,8 @@
 Role: pins backend.core.database `tortoise_config` and backend.core.settings
   `DatabaseSettings`: pool size and credentials from the settings, models and migrations in one
   app (`APP_LABEL`, `MIGRATIONS_MODULE`), UTC, a bounded pool defaulting to ten, a required
-  password.
+  password; the migration owner is another role than the runtime role, reached through
+  `for_owner()` (D-021).
 Used by: pytest (unit).
 Depends on: the autouse `_required_environment` from tests/unit/backend/conftest.py;
   `monkeypatch` for environment overrides. No services.
@@ -55,3 +56,22 @@ def test_missing_database_password_fails(monkeypatch: pytest.MonkeyPatch) -> Non
 
     with pytest.raises(ValidationError, match="db_password"):
         DatabaseSettings()
+
+
+def test_owner_and_runtime_role_must_differ(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DB_OWNER_USER", "unit_tests")
+
+    with pytest.raises(ValidationError, match="db_owner_user must name another role"):
+        DatabaseSettings()
+
+
+def test_for_owner_connects_as_the_migration_owner() -> None:
+    settings = DatabaseSettings()
+
+    owner = settings.for_owner()
+
+    assert owner.db_user == "unit_tests_owner"
+    assert owner.db_password.get_secret_value() == "test-only-not-a-secret-owner"
+    assert settings.db_user == "unit_tests"  # the runtime settings are unchanged
+    credentials = tortoise_config(owner)["connections"]["default"]["credentials"]
+    assert credentials["user"] == "unit_tests_owner"

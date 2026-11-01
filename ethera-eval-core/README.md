@@ -278,7 +278,8 @@ applies pending migrations at startup. After changing a model in `common_lib/mod
 the migration against the running test database and review the SQL before committing:
 
 ```bash
-export DB_HOST=127.0.0.1 DB_PORT=55432 DB_NAME=ethera_eval_test DB_USER=ethera_eval_app DB_PASSWORD=test-only-not-a-secret
+export DB_HOST=127.0.0.1 DB_PORT=55432 DB_NAME=ethera_eval_test DB_USER=ethera_eval_app DB_PASSWORD=test-only-not-a-secret \
+  DB_OWNER_USER=ethera_eval_owner DB_OWNER_PASSWORD=test-only-not-a-secret
 ```
 
 ```bash
@@ -338,7 +339,7 @@ flowchart LR
 
 | Component | Responsibility |
 |---|---|
-| `backend/` | The only HTTP API (`/api/v1`, `/health`, `/docs`). Authentication, permissions, users and rate limiting; the domain modules in `evals/` are mounted into it by `evals.app`. Owns the database: applies migrations and seeds roles, permissions and the admin account at startup. Connects to the broker and declares the queues; publishing and consuming are wired in slice 003. |
+| `backend/` | The only HTTP API (`/api/v1`, `/health`, `/docs`). Authentication, permissions, users and rate limiting; the domain modules in `evals/` are mounted into it by `evals.app`. Applies migrations, runtime grants and the seeds (roles, permissions, the admin account, then each module's seed) at startup as the migration owner, under the startup lock; serves requests as the runtime role. Connects to the broker and declares the queues; publishing and consuming are wired in slice 003. |
 | `runner/` | A plain asyncio worker with no ports and no database access. Connects to the broker, declares its queues and keeps a heartbeat; from slice 003 it consumes Trial batches, runs them against the sandbox target, publishes the results, then acknowledges the job. |
 | `common_lib/` | Code both services import: settings base, error codes, logging, permissions, ORM models, request schemas, and the message contract (envelope, payloads, queue topology). |
 | PostgreSQL | Users, roles, permissions and the rate-limit counters, then the domain modules' tables (prefixed per module). Will wake waiting requests through `LISTEN/NOTIFY` (slice 003). |
@@ -385,7 +386,10 @@ for Eval Runs; the generic pieces are already here and tested.
 - **Authorization:** endpoints check permissions, never role names.
 - **Input and abuse:** unknown fields are rejected, bodies are limited to 1 MiB, CORS allows
   only `CORS_ALLOWED_ORIGINS`, and every `/api/v1` request is rate limited.
-- **Least privilege:** a non-superuser database role, one broker user per service, internal
+- **Least privilege:** two non-superuser database roles (D-021): a migration owner (BYPASSRLS)
+  used only at startup to migrate, grant and seed, and a runtime role (NOBYPASSRLS, data grants
+  only, audit rows INSERT + SELECT only) that serves every request; local volumes created
+  before this split need `docker compose down -v` once. One broker user per service, internal
   networks, and containers that run as non-root, read-only and with dropped capabilities.
 - **Secrets and supply chain:** secrets come from the environment only and are never logged;
   images are pinned by digest and packages by hash. `/docs` is public while

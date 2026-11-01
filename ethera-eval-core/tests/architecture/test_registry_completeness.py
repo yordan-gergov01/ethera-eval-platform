@@ -3,11 +3,13 @@
 Role: the insurance tier for the append-only registries (Bible, cross-cutting surfaces):
   every `Permission` is granted to a role and required by at least one route; every
   `ErrorCode` is referenced as `ErrorCode.<NAME>` somewhere (a default code of an exception
-  class, a raise, or the HTTP mapping) — member definitions never use that prefix. Audit
-  actions join this guard when the audit table exists (docs/DECISIONS.md D-009, D-010).
+  class, a raise, or the HTTP mapping) — member definitions never use that prefix; likewise
+  every `AuditAction` (docs/DECISIONS.md D-009, D-010).
 Used by: pytest (unit-level; builds the app without a database).
 Depends on: `evals.app.create_app` (the composed app, so module routes count too), the
   OpenAPI security scopes FastAPI derives from `require_permissions`, and a source scan.
+  Every `AuditAction` (common_lib.audit) is referenced as `AuditAction.<NAME>` (the registry
+  may be empty; slice 001 wave 2 adds its first members).
 Key invariants: a registry entry with no consumer fails the build (no dead seams); the
   negative cases prove both checks fire.
 """
@@ -18,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from backend.core.settings import BackendSettings
+from common_lib.audit import AuditAction
 from common_lib.errors import ErrorCode
 from common_lib.permissions import DEFAULT_ROLE_GRANTS, Permission
 from evals.app import create_app
@@ -29,6 +32,8 @@ UNIT_SETTINGS = {
     "db_name": "unit_tests",
     "db_user": "unit_tests",
     "db_password": "test-only-not-a-secret",
+    "db_owner_user": "unit_tests_owner",
+    "db_owner_password": "test-only-not-a-secret",
     "jwt_secret": "test-only-not-a-secret-signing-key-32-bytes-long",
     "admin_username": "admin",
     "admin_email": "admin@example.com",
@@ -56,6 +61,11 @@ def unrequired(permissions: Iterable[str], scopes: set[str]) -> list[str]:
 def unreferenced(names: Iterable[str], sources: Iterable[str]) -> list[str]:
     text = "\n".join(sources)
     return sorted(n for n in names if not re.search(rf"\bErrorCode\.{n}\b", text))
+
+
+def unreferenced_audit_actions(names: Iterable[str], sources: Iterable[str]) -> list[str]:
+    text = "\n".join(sources)
+    return sorted(n for n in names if not re.search(rf"\bAuditAction\.{n}\b", text))
 
 
 def _sources() -> list[str]:
@@ -87,3 +97,12 @@ def test_unrequired_fires_on_a_permission_no_route_needs() -> None:
 def test_unreferenced_fires_on_a_dead_error_code() -> None:
     sources = ["raise X(code=ErrorCode.USED_ONE)"]
     assert unreferenced(["USED_ONE", "DEAD_ONE"], sources) == ["DEAD_ONE"]
+
+
+def test_every_audit_action_is_referenced() -> None:
+    assert unreferenced_audit_actions((action.name for action in AuditAction), _sources()) == []
+
+
+def test_unreferenced_audit_actions_fires_on_a_dead_action() -> None:
+    sources = ["AuditEntry(action=AuditAction.MANIFEST_CREATED, ...)", "ErrorCode.DEAD_ONE"]
+    assert unreferenced_audit_actions(["MANIFEST_CREATED", "DEAD_ONE"], sources) == ["DEAD_ONE"]

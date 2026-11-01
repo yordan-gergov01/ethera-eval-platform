@@ -24,7 +24,11 @@ OTHER = UUID("00000000-0000-4000-8000-0000000000bb")
 def waiter() -> JobWaiter:
     return JobWaiter(
         DatabaseSettings(
-            db_name="unit_tests", db_user="unit_tests", db_password=SecretStr("test-only")
+            db_name="unit_tests",
+            db_user="unit_tests",
+            db_password=SecretStr("test-only"),
+            db_owner_user="unit_tests_owner",
+            db_owner_password=SecretStr("test-only"),
         )
     )
 

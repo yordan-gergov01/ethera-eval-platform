@@ -2,13 +2,14 @@
 
 Role: pins backend.api.errors as installed by `backend.main.create_app`: each
   common_lib.errors `AppError` maps to its status and code, plus 401, 429, 404, 405, 400, 413,
-  validation and unexpected-exception responses, all readable by the browser through CORS.
+  validation and unexpected-exception responses, all readable by the browser through CORS; an
+  `InvalidFieldsError` lists its problems in `errors`, other application errors carry none.
 Used by: pytest (unit).
 Depends on: the autouse `_required_environment` from tests/unit/backend/conftest.py; test
   routes added to the app (`/raise/{kind}`, `/items`, `/boom`). No services.
 Key invariants: validation errors list fields without echoing the input; a 500 is generic and
-  logs the full exception chain with the request ID; every `ErrorCode` value equals its name,
-  since the values are part of the API.
+  logs the exception chain's type names (never its messages) with the request ID; every
+  `ErrorCode` value equals its name, since the values are part of the API.
 """
 
 import json
@@ -27,6 +28,8 @@ from common_lib.errors import (
     BusinessRuleError,
     ConflictError,
     ErrorCode,
+    FieldProblem,
+    InvalidFieldsError,
     NotFoundError,
     PermissionDeniedError,
     RateLimitExceededError,
@@ -53,6 +56,9 @@ ERRORS: dict[str, AppError] = {
     "unavailable": ServiceUnavailableError(),
     # A more specific code from the catalogue overrides the default one.
     "overridden": ConflictError("Already done.", code=ErrorCode.BUSINESS_RULE_VIOLATION),
+    "fields": InvalidFieldsError(
+        [FieldProblem("a.b", "too_long", "Too long."), FieldProblem("c", "missing", "Required.")]
+    ),
 }
 
 
@@ -105,6 +111,7 @@ def problem(response: Response) -> dict[str, object]:
         ("limited", 429, ErrorCode.RATE_LIMITED),
         ("unavailable", 503, ErrorCode.SERVICE_UNAVAILABLE),
         ("overridden", 409, ErrorCode.BUSINESS_RULE_VIOLATION),
+        ("fields", 422, ErrorCode.BUSINESS_RULE_VIOLATION),
     ],
 )
 async def test_application_errors_map_to_status_and_code(
@@ -117,6 +124,16 @@ async def test_application_errors_map_to_status_and_code(
     assert body["code"] == code
     assert body["instance"] == f"/raise/{kind}"
     assert body["detail"] == ERRORS[kind].message
+
+
+async def test_invalid_fields_error_lists_its_problems_in_errors(client: AsyncClient) -> None:
+    body = problem(await client.get("/raise/fields"))
+
+    assert body["errors"] == [
+        {"field": "a.b", "message": "Too long.", "type": "too_long"},
+        {"field": "c", "message": "Required.", "type": "missing"},
+    ]
+    assert "errors" not in problem(await client.get("/raise/rule"))
 
 
 async def test_401_tells_the_client_to_use_a_bearer_token(client: AsyncClient) -> None:
@@ -192,7 +209,7 @@ async def test_streamed_oversized_body_is_413(client: AsyncClient) -> None:
     assert problem(response)["code"] == "PAYLOAD_TOO_LARGE"
 
 
-async def test_unexpected_exception_is_generic_500_and_logged_with_traceback(
+async def test_unexpected_exception_is_generic_500_and_logged_with_its_exception_chain(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     # Build the app inside the test so its log handler writes to the captured stdout.
@@ -208,13 +225,15 @@ async def test_unexpected_exception_is_generic_500_and_logged_with_traceback(
     assert INTERNAL_DETAIL not in response.text
     assert "RuntimeError" not in response.text
 
-    lines = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    output = capsys.readouterr().out
+    lines = [json.loads(line) for line in output.splitlines()]
     [failure] = [line for line in lines if line["event"] == "unhandled_exception"]
     assert failure["request_id"] == body["request_id"]
     assert failure["path"] == "/boom"
-    # The full chain is logged: the RuntimeError and the error that caused it.
-    exc_types = {frame["exc_type"] for frame in failure["exception"]}
-    assert exc_types == {"RuntimeError", "ConnectionRefusedError"}
+    # The whole chain is logged by type name: the RuntimeError and the error that caused it,
+    # never their messages (FIX-003).
+    assert failure["error_chain"] == ["RuntimeError", "ConnectionRefusedError"]
+    assert INTERNAL_DETAIL not in output
     [access] = [line for line in lines if line["event"] == "request"]
     assert access["status"] == 500
 

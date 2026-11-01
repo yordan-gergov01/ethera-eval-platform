@@ -10,7 +10,9 @@ Depends on: `backend.api` (errors, health, middleware, v1 routers), `backend.cor
   modules, periodic, security, settings, startup, tokens), `backend.messaging.connection`,
   `backend.services` (rate_limit, seeding), `common_lib` (logging, broker connector, settings).
 Key invariants: boots complete with no modules (tests/integration/test_boot_without_evals.py).
-  Migrations and seeding run once across replicas under the startup lock (template_core D-004).
+  Migrations, grants and seeding (core, then modules) run once across replicas under the
+  startup lock, as the migration owner (template_core D-004, D-021); the request pool opens
+  afterwards, as the runtime role.
   The broker connection starts in the background even with nothing to publish, to declare the
   topology (template_core D-010); the API works without the broker. No publisher, consumer,
   job waiter or sweeper is started yet — they are wired in slice 003 (D-006). Middleware is
@@ -40,7 +42,7 @@ from backend.core.modules import ModuleMount
 from backend.core.periodic import periodic_task
 from backend.core.security import Argon2PasswordHasher
 from backend.core.settings import BackendSettings
-from backend.core.startup import apply_migrations, startup_lock
+from backend.core.startup import prepare_database
 from backend.core.tokens import JwtTokenService
 from backend.messaging.connection import BrokerConnection
 from backend.services.rate_limit import RateLimitRule, RateLimitRules, build_rate_limiter
@@ -100,21 +102,21 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        # Migrations and seeding run once across all replicas, under the startup lock.
-        async with startup_lock(settings):
-            await apply_migrations(settings, modules)
-            await init_database(settings, modules)
-            try:
-                await build_seeding_service(hasher).seed(
-                    AdminAccount(
-                        username=settings.admin_username,
-                        email=settings.admin_email,
-                        password=settings.admin_password,
-                    )
+        # Migrations, grants and seeding run once across all replicas, under the startup
+        # lock, as the migration owner; requests are then served on the runtime role's pool.
+        await prepare_database(
+            settings,
+            modules,
+            seed_core=lambda: build_seeding_service(hasher).seed(
+                AdminAccount(
+                    username=settings.admin_username,
+                    email=settings.admin_email,
+                    password=settings.admin_password,
                 )
-            except BaseException:
-                await close_database()
-                raise
+            ),
+            admin_username=settings.admin_username,
+        )
+        await init_database(settings, modules)
         # The broker is reached in the background; the API works without it.
         broker.start()
         logger.info("startup_complete")

@@ -4,7 +4,8 @@ Role: the `Permission` and `RoleName` enums and `DEFAULT_ROLE_GRANTS`. To add a 
   a member to `Permission`, add it to the grants, and declare it on the endpoint; no migration
   is needed.
 Used by: `backend.api.dependencies.permissions`, the roles and users routers, the auth, roles,
-  seeding and users services, `common_lib.schemas.users`; tests/unit/common_lib/test_permissions.py.
+  seeding and users services, `common_lib.schemas.users`, the registry routes
+  (`evals.registry.api.router`); tests/unit/common_lib/test_permissions.py.
 Depends on: the standard library only.
 Key invariants: the code is the source of truth: on every start the backend syncs these
   permissions, the roles and their grants into the database (template_core D-006). Endpoints
@@ -23,6 +24,9 @@ class Permission(StrEnum):
     USERS_READ = "users:read"
     USERS_CREATE = "users:create"
     USERS_UPDATE = "users:update"
+    # Slice 001: the Product registry (PP-003).
+    PRODUCTS_READ = "products:read"
+    MANIFESTS_WRITE = "manifests:write"
 
 
 class RoleName(StrEnum):
@@ -36,6 +40,6 @@ DEFAULT_ROLE_GRANTS: Mapping[RoleName, frozenset[Permission]] = MappingProxyType
     {
         RoleName.ADMIN: frozenset(Permission),
         # Granted permissions arrive with the features that need them.
-        RoleName.USER: frozenset(),
+        RoleName.USER: frozenset({Permission.PRODUCTS_READ}),
     }
 )

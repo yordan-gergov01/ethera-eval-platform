@@ -7,6 +7,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set in .env}
       POSTGRES_USER: ${POSTGRES_SUPERUSER:?POSTGRES_SUPERUSER must be set in .env}
       POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?POSTGRES_SUPERUSER_PASSWORD must be set in .env}
+      POSTGRES_OWNER_USER: ${POSTGRES_OWNER_USER:?POSTGRES_OWNER_USER must be set in .env}
+      POSTGRES_OWNER_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?POSTGRES_OWNER_PASSWORD must be set in .env}
       POSTGRES_APP_USER: ${POSTGRES_APP_USER:?POSTGRES_APP_USER must be set in .env}
       POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD must be set in .env}
     volumes:
@@ -53,6 +55,9 @@ services:
       DB_NAME: ${POSTGRES_DB:?POSTGRES_DB must be set in .env}
       DB_USER: ${POSTGRES_APP_USER:?POSTGRES_APP_USER must be set in .env}
       DB_PASSWORD: ${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD must be set in .env}
+      # The migration owner, used only at startup under the lock (D-021, D-022 Fork R2 = A).
+      DB_OWNER_USER: ${POSTGRES_OWNER_USER:?POSTGRES_OWNER_USER must be set in .env}
+      DB_OWNER_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?POSTGRES_OWNER_PASSWORD must be set in .env}
       DB_POOL_MAX_SIZE: ${DB_POOL_MAX_SIZE:-10}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}

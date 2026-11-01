@@ -8,13 +8,16 @@ Role: connects the integration tests to the real PostgreSQL and RabbitMQ of the 
 
 Used by: every test module in tests/integration/ (fixtures `fresh_database`, `backend_settings`,
   `started_app`, `broker_available`, `empty_queues`; helpers such as `broker_channel`,
-  `create_user`, `connect_as_app`, `token_for`, `assert_problem`, `eventually`).
+  `create_user`, `connect_as_app`, `connect_as_owner`, `token_for`, `assert_problem`,
+  `eventually`).
 Depends on: the test PostgreSQL (with pgvector) and RabbitMQ (users backend, runner, inspector)
   of docker-compose.test.yml; `backend.main.create_app`; `common_lib.messaging.declare`.
 Key invariants: unreachable services skip the tests locally but fail them with
   REQUIRE_INTEGRATION=1 (set in the Docker test runner), so nothing passes silently; each test
-  that takes `fresh_database` gets its own database, its extension created by the superuser
-  and everything else by the non-superuser app role, dropped afterwards; all credentials are
+  that takes `fresh_database` gets its own database, owned by the migration owner (BYPASSRLS),
+  its extension created by the superuser, CONNECT granted to the runtime role only — as the init
+  script does in production (D-021) — and dropped afterwards; the session probe fails with a
+  recreate hint when the test PostgreSQL still has the old single role; all credentials are
   fixed, fake test values.
 """
 
@@ -58,6 +61,8 @@ class TestDatabaseServer:
     superuser_password: str = os.environ.get("TEST_DB_SUPERUSER_PASSWORD", "test-only-not-a-secret")
     app_user: str = os.environ.get("TEST_DB_APP_USER", "ethera_eval_app")
     app_password: str = os.environ.get("TEST_DB_APP_PASSWORD", "test-only-not-a-secret")
+    owner_user: str = os.environ.get("TEST_DB_OWNER_USER", "ethera_eval_owner")
+    owner_password: str = os.environ.get("TEST_DB_OWNER_PASSWORD", "test-only-not-a-secret")
 
     async def connect_as_superuser(self, database: str) -> asyncpg.Connection:
         return await asyncpg.connect(
@@ -129,18 +134,36 @@ async def empty_queues(broker_available: None) -> None:
 
 @pytest.fixture(scope="session", autouse=True)
 def _require_test_database() -> None:
-    async def probe() -> None:
+    async def probe() -> int:
         connection = await SERVER.connect_as_superuser(SERVER.maintenance_db)
-        await connection.close()
+        try:
+            # The two roles of D-021, as docker/postgres/initdb/10-create-roles.sh creates them.
+            roles: int = await connection.fetchval(
+                "SELECT count(*) FROM pg_roles WHERE (rolname = $1 AND rolbypassrls) "
+                "OR (rolname = $2 AND NOT rolbypassrls)",
+                SERVER.owner_user,
+                SERVER.app_user,
+            )
+            return roles
+        finally:
+            await connection.close()
 
     try:
-        asyncio.run(probe())
+        roles = asyncio.run(probe())
     except (OSError, asyncpg.PostgresError, TimeoutError) as exc:
         message = (
             f"test PostgreSQL not reachable on {SERVER.host}:{SERVER.port} "
             f"({type(exc).__name__}); start it with: {START_COMMAND}"
         )
         _skip_or_fail(message)
+        return
+    if roles != 2:
+        pytest.fail(
+            "the test PostgreSQL lacks the migration owner or runtime role (an old volume?); "
+            "recreate it: docker compose -f docker-compose.test.yml -p ethera_eval_core_test "
+            "up -d --force-recreate --wait postgres",
+            pytrace=False,
+        )
 
 
 def _skip_or_fail(message: str) -> None:
@@ -175,15 +198,18 @@ def broker_available() -> None:
 
 @pytest.fixture
 async def fresh_database() -> AsyncIterator[DatabaseSettings]:
-    """A new, empty database owned by the application role, dropped afterwards.
+    """A new, empty database owned by the migration owner, dropped afterwards.
 
-    Mirrors production: the extension is created by the superuser, everything else
-    by the non-superuser application role.
+    Mirrors production (docker/postgres/initdb/10-create-roles.sh): the extension is created
+    by the superuser, the schema by the owner at startup, and the runtime role may only
+    connect until startup grants it data access.
     """
     name = f"it_{uuid4().hex[:12]}"
     admin = await SERVER.connect_as_superuser(SERVER.maintenance_db)
     try:
-        await admin.execute(f'CREATE DATABASE "{name}" OWNER "{SERVER.app_user}"')
+        await admin.execute(f'CREATE DATABASE "{name}" OWNER "{SERVER.owner_user}"')
+        await admin.execute(f'REVOKE ALL ON DATABASE "{name}" FROM PUBLIC')
+        await admin.execute(f'GRANT CONNECT ON DATABASE "{name}" TO "{SERVER.app_user}"')
         database = await SERVER.connect_as_superuser(name)
         try:
             await database.execute("CREATE EXTENSION IF NOT EXISTS vector")
@@ -196,6 +222,8 @@ async def fresh_database() -> AsyncIterator[DatabaseSettings]:
             db_name=name,
             db_user=SERVER.app_user,
             db_password=SecretStr(SERVER.app_password),
+            db_owner_user=SERVER.owner_user,
+            db_owner_password=SecretStr(SERVER.owner_password),
         )
     finally:
         await admin.execute(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)')
@@ -258,8 +286,13 @@ async def create_user(
         await connection.close()
 
 
+async def connect_as_owner(settings: DatabaseSettings) -> asyncpg.Connection:
+    """A direct connection as the migration owner (BYPASSRLS), for setup and ledger reads."""
+    return await connect_as_app(settings.for_owner())
+
+
 async def connect_as_app(settings: DatabaseSettings) -> asyncpg.Connection:
-    """A direct connection as the application role, for assertions on stored data."""
+    """A direct connection as the runtime role, for assertions on stored data."""
     return await asyncpg.connect(
         host=settings.db_host,
         port=settings.db_port,

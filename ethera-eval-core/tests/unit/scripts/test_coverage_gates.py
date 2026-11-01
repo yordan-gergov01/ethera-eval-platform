@@ -5,8 +5,11 @@ Used by: pytest.
 Depends on: `scripts.coverage_gates` with hand-built coverage.py JSON reports.
 Key invariants: every gate has a negative case — below threshold, a critical module missing
   from the report, a domain module below 90% hidden behind a well-tested one, a floor miss.
+  `test_critical_paths_include_every_membership_gate` scans the source tree: every domain
+  module's membership gate (`evals/*/services/access.py`) is listed in CRITICAL_PATHS.
 """
 
+from pathlib import Path
 from typing import Any
 
 from scripts.coverage_gates import CRITICAL_PATHS, evaluate
@@ -23,6 +26,20 @@ def _file(covered: int, statements: int) -> dict[str, Any]:
             "num_branches": 0,
         }
     }
+
+
+CORE_ROOT = Path(__file__).resolve().parents[3]
+
+
+def test_critical_paths_include_every_membership_gate() -> None:
+    gates = sorted(
+        path.relative_to(CORE_ROOT).as_posix()
+        for path in CORE_ROOT.glob("evals/*/services/access.py")
+    )
+
+    assert gates, "no membership gate found: the scan looks in the wrong place"
+    uncovered = [gate for gate in gates if not any(gate.startswith(p) for p in CRITICAL_PATHS)]
+    assert uncovered == []
 
 
 def _critical_files() -> dict[str, Any]:

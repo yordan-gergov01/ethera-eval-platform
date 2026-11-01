@@ -1,18 +1,22 @@
 """Application errors, grouped by meaning rather than by transport.
 
 Role: `ErrorCode` (every code a client can receive) and the `AppError` hierarchy that services
-  raise.
+  raise; `InvalidFieldsError` carries its `FieldProblem`s for the problem's `errors` list.
 Used by: the API (`backend.api.errors`, middleware, dependencies), services (auth, rate_limit,
   users), `backend.core.tokens`, `backend.core.long_poll`, `backend.dal.users.repository`,
-  `backend.messaging.publisher`, and their tests.
+  `backend.messaging.publisher`, the domain modules' services and repositories (`evals.registry`),
+  and their tests.
 Depends on: the standard library only.
 Key invariants: only the HTTP layer knows which status code each error maps to (template_core
   D-005). Every error carries a stable machine-readable `code` and a message safe to show a
   client; `ErrorCode` values are part of the API and are never renamed. Infrastructure failures
   are wrapped and chained (`raise ... from exc`) so the original traceback stays in the logs.
+  A `FieldProblem` names a field and a kind with a fixed message, never the submitted value.
   ORM-free (import-linter).
 """
 
+from collections.abc import Sequence
+from dataclasses import dataclass
 from enum import StrEnum
 from typing import ClassVar
 
@@ -44,6 +48,10 @@ class ErrorCode(StrEnum):
     LAST_ADMIN_PROTECTED = "LAST_ADMIN_PROTECTED"
     WEAK_PASSWORD = "WEAK_PASSWORD"  # noqa: S105 - an error code name, not a secret
     INVALID_CURRENT_PASSWORD = "INVALID_CURRENT_PASSWORD"  # noqa: S105 - an error code name
+    # Slice 001: the Product registry.
+    PRODUCT_NOT_FOUND = "PRODUCT_NOT_FOUND"
+    MANIFEST_VERSION_CONFLICT = "MANIFEST_VERSION_CONFLICT"
+    MANIFEST_INVALID = "MANIFEST_INVALID"
 
     # Produced by the HTTP layer itself.
     MALFORMED_REQUEST = "MALFORMED_REQUEST"
@@ -127,3 +135,31 @@ class ServiceUnavailableError(AppError):
 
     default_code = ErrorCode.SERVICE_UNAVAILABLE
     default_message = "The service is temporarily unavailable. Try again later."
+
+
+@dataclass(frozen=True, slots=True)
+class FieldProblem:
+    """One problem of a refused input: where (`field`) and what kind (`type`), never the value."""
+
+    field: str
+    type: str
+    message: str
+
+
+class InvalidFieldsError(BusinessRuleError):
+    """Well-formed input whose content breaks rules; every problem is listed by field.
+
+    The messages are fixed texts per problem kind: they never quote the submitted value.
+    """
+
+    default_message = "The submitted content is not valid. See 'errors' for details."
+
+    def __init__(
+        self,
+        problems: Sequence[FieldProblem],
+        message: str | None = None,
+        *,
+        code: ErrorCode | None = None,
+    ) -> None:
+        super().__init__(message, code=code)
+        self.problems = tuple(problems)
