@@ -256,14 +256,16 @@ resolves for all platforms at once, so the same files work on Windows, macOS and
 |---|---|
 | `requirements/backend.in` | the backend image |
 | `requirements/runner.in` | the runner image |
-| `requirements/dev.in` | local development: both services plus the tooling |
+| `requirements/demo_target.in` | the demo target (constrained by `backend.txt`; its image arrives in slice 003) |
+| `requirements/dev.in` | local development: the services plus the tooling |
 
 To add a dependency, add it to the right `.in` file and recompile. Compile in this order,
-because `dev.in` is constrained by the two service files:
+because `demo_target.in` is constrained by `backend.txt` and `dev.in` by the service files:
 
 ```bash
 uv pip compile --universal --generate-hashes --python-version 3.12 requirements/backend.in -o requirements/backend.txt
 uv pip compile --universal --generate-hashes --python-version 3.12 requirements/runner.in -o requirements/runner.txt
+uv pip compile --universal --generate-hashes --python-version 3.12 requirements/demo_target.in -o requirements/demo_target.txt
 uv pip compile --universal --generate-hashes --python-version 3.12 requirements/dev.in -o requirements/dev.txt
 ```
 

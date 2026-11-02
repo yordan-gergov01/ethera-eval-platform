@@ -26,12 +26,14 @@ annotated-doc==0.0.5 \
     --hash=sha256:c7e58ce09192557605d8bbd92836d7e1d520ac9580096042c0bfd197efacf1bb
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   fastapi
 annotated-types==0.8.0 \
     --hash=sha256:13b2beaad985e05e2d6407ee4c4f35590b11f8d693a258a561055cac8f64cab7 \
     --hash=sha256:f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   -c requirements/runner.txt
     #   pydantic
 anyio==4.15.1 \
@@ -39,6 +41,7 @@ anyio==4.15.1 \
     --hash=sha256:9f28306018cbd6d329e64a36d58256edff76dd996fe423bc957326e578b82a94
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   httpx
     #   starlette
     #   tortoise-orm
@@ -337,6 +340,7 @@ click==8.5.0 \
     --hash=sha256:ba0d2089de75ea0310e2dde03160e6ca10009947fb95a182f9b54021bb272e34
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   import-linter
     #   uvicorn
 colorama==0.4.6 ; sys_platform == 'win32' \
@@ -485,7 +489,9 @@ fastapi==0.142.2 \
     --hash=sha256:bd5f4d81f1e93a88bcd77caf4dfe3c2dbffc3805407a0007e9a114c18b3a670b
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   -r requirements/backend.in
+    #   -r requirements/demo_target.in
 filelock==4.0.11 \
     --hash=sha256:1cbdc4ace7fb11d2f6d073f5c3d91537a23b3d58d2bf2fdffc12c6d717a589c6 \
     --hash=sha256:9dc453a1edd25626a6fc97c2cb1bd9f7e46345843d40b3181c071761fb9a5f7a
@@ -611,6 +617,7 @@ h11==0.16.0 \
     --hash=sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   httpcore
     #   uvicorn
 httpcore==1.0.9 \
@@ -630,6 +637,7 @@ idna==3.20 \
     --hash=sha256:ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   -c requirements/runner.txt
     #   anyio
     #   email-validator
@@ -1039,6 +1047,7 @@ opentelemetry-api==1.45.0 \
     --hash=sha256:80e068aba7cd56c8b58512d6a36f8d25cb1dfaa0c0a4cc1c938ccf9f362d9cb3
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   fastapi
 packaging==26.3 \
     --hash=sha256:94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79 \
@@ -1231,6 +1240,7 @@ pydantic==2.13.5 \
     --hash=sha256:51a9c5f7b2f8e636f04c6cada605d9b6a3bf1348fdf945a3d8869b19bba0ee08
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   -c requirements/runner.txt
     #   -r requirements/backend.in
     #   -r requirements/runner.in
@@ -1359,6 +1369,7 @@ pydantic-core==2.46.5 \
     --hash=sha256:ff218293c9c806138dca139765e3b067621be52bcd93cdc14c7711be7ddc90a9
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   -c requirements/runner.txt
     #   pydantic
 pydantic-settings==2.15.0 \
@@ -1527,6 +1538,7 @@ starlette==1.7.0 \
     --hash=sha256:c79f74ea63cff761804fbbfb182f1e0b440c2d07b164d24700c5a1bab5d6ff5d
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   fastapi
 structlog==26.1.0 \
     --hash=sha256:e081a26d6c373e6d201eca24eede26d8ffab07f88f477822e679183428d3d91e \
@@ -1551,6 +1563,7 @@ typing-extensions==4.16.0 \
     --hash=sha256:dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   -c requirements/runner.txt
     #   anyio
     #   asyncpg-stubs
@@ -1568,6 +1581,7 @@ typing-inspection==0.4.4 \
     --hash=sha256:65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   -c requirements/runner.txt
     #   fastapi
     #   pydantic
@@ -1604,7 +1618,9 @@ uvicorn==0.54.0 \
     --hash=sha256:a2e33cbfaa0306f8e6b0c13e0cb89d7d7a2da3e62b90c66e18c33d9807b28620
     # via
     #   -c requirements/backend.txt
+    #   -c requirements/demo_target.txt
     #   -r requirements/backend.in
+    #   -r requirements/demo_target.in
 virtualenv==21.14.5 \
     --hash=sha256:b0651e0174982bba17cc6f0aaa2ef496730cb85a3f35eb5d1119d1c904f7d1da \
     --hash=sha256:c4cb6c13e46b57225a999c7e22a09b163393878facc7ac4c059a57f46faa1647

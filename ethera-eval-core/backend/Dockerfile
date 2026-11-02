@@ -46,6 +46,8 @@ COPY backend ./backend
 COPY runner ./runner
 COPY evals ./evals
 COPY migrations ./migrations
+# The demo target's tests run in the suite; its own runtime image arrives in slice 003 (D-024).
+COPY demo_target ./demo_target
 COPY tests ./tests
 # ruff, mypy, import-linter and pytest keep their caches in the working directory; the
 # sources stay owned by root and read-only for the test user.

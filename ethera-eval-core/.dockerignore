@@ -4,6 +4,7 @@
 !backend/
 !common_lib/
 !evals/
+!demo_target/
 !runner/
 !migrations/
 !requirements/

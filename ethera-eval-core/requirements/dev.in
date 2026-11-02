@@ -1,9 +1,12 @@
-# Local development and test tooling, on top of both services' dependencies.
+# Local development and test tooling, on top of the services' dependencies (backend, runner,
+# demo target).
 # The constraints keep shared packages at the versions the services use.
 -r backend.in
 -r runner.in
+-r demo_target.in
 -c backend.txt
 -c runner.txt
+-c demo_target.txt
 
 uv
 ruff

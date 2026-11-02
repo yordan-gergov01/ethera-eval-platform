@@ -1,0 +1,7 @@
+# Direct runtime dependencies of the demo target (the client's product under test, R-204).
+# Compiled into demo_target.txt; see README.md, "How to run the tests".
+# Constrained by the backend's pins, so both services run the same FastAPI and uvicorn.
+-c backend.txt
+
+fastapi
+uvicorn
