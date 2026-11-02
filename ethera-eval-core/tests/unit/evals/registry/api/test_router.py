@@ -10,6 +10,11 @@ Depends on: `evals.app.create_app`; backend.api.dependencies.auth `get_current_u
   backend.api.dependencies.rate_limit `limit_requests` (overridden); fake settings.
 Key invariants: the expected table is written by hand, so a route that loses or changes its
   Permission fails here; the behavioural check uses a caller holding every OTHER Permission.
+  The scan covers the registry's own routes — those tagged `products` — since the evaluation
+  module mounts its Dataset routes under the same prefix (slice 002, R-207); that no
+  `/api/v1/products` route escapes both modules' tables is pinned by
+  `test_every_products_route_belongs_to_exactly_one_module` in
+  tests/unit/evals/evaluation/api/test_router.py.
 """
 
 from collections.abc import AsyncIterator
@@ -63,8 +68,8 @@ def test_every_registry_route_declares_its_permission() -> None:
             for scope in scopes
         }
         for path, methods in schema["paths"].items()
-        if path.startswith("/api/v1/products")
         for method, operation in methods.items()
+        if "products" in operation.get("tags", [])
     }
 
     assert declared == {key: {permission.value} for key, permission in EXPECTED.items()}

@@ -4,8 +4,8 @@ Role: `ErrorCode` (every code a client can receive) and the `AppError` hierarchy
   raise; `InvalidFieldsError` carries its `FieldProblem`s for the problem's `errors` list.
 Used by: the API (`backend.api.errors`, middleware, dependencies), services (auth, rate_limit,
   users), `backend.core.tokens`, `backend.core.long_poll`, `backend.dal.users.repository`,
-  `backend.messaging.publisher`, the domain modules' services and repositories (`evals.registry`),
-  and their tests.
+  `backend.messaging.publisher`, the domain modules' services and repositories (`evals.registry`,
+  `evals.evaluation`), and their tests.
 Depends on: the standard library only.
 Key invariants: only the HTTP layer knows which status code each error maps to (template_core
   D-005). Every error carries a stable machine-readable `code` and a message safe to show a
@@ -52,6 +52,9 @@ class ErrorCode(StrEnum):
     PRODUCT_NOT_FOUND = "PRODUCT_NOT_FOUND"
     MANIFEST_VERSION_CONFLICT = "MANIFEST_VERSION_CONFLICT"
     MANIFEST_INVALID = "MANIFEST_INVALID"
+    # Slice 002: Datasets.
+    DATASET_NOT_FOUND = "DATASET_NOT_FOUND"
+    DATASET_VERSION_NOT_FOUND = "DATASET_VERSION_NOT_FOUND"
 
     # Produced by the HTTP layer itself.
     MALFORMED_REQUEST = "MALFORMED_REQUEST"

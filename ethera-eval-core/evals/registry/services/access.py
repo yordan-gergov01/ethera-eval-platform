@@ -3,7 +3,8 @@
 Role: `product_not_found()` (the one PRODUCT_NOT_FOUND error) and `member_client_ids_for(user_id,
   client_id, project_id)` — the member Client IDs a request on one Product runs with (its tenant
   transaction's set), or that error.
-Used by: `evals.registry.services.products`, `evals.registry.services.manifests`.
+Used by: `evals.registry.services.products`, `.manifests`, `.lookup`; through the `evals.registry`
+  barrel `evals.evaluation.services` (`member_client_ids_for`).
 Depends on: the `backend` barrel (`list_member_client_ids`), `evals.registry.domain`
   (`is_identifier`), `common_lib.errors`.
 Key invariants: a missing Product, a Client the caller is not a member of and an off-pattern

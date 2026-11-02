@@ -12,10 +12,12 @@ requires-python = ">=3.12,<3.13"
 dependencies = []
 
 [tool.setuptools.packages.find]
-include = ["backend*", "runner*", "common_lib*", "migrations*", "evals*", "scripts*"]
+include = ["backend*", "runner*", "common_lib*", "migrations*", "evals*", "scripts*", "demo_target*"]
 
 [tool.setuptools.package-data]
 "common_lib.schemas" = ["data/*.txt"]
+# The demo target reads its instruction sets from these files on every construction (FR-206).
+"demo_target" = ["instruction_sets/*.md"]
 
 # Configuration of the `tortoise` migration command line (makemigrations, sqlmigrate).
 [tool.tortoise]
@@ -61,13 +63,13 @@ select = [
 "evals/MODULES.py" = ["N999"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["backend", "runner", "common_lib", "evals", "scripts"]
+known-first-party = ["backend", "runner", "common_lib", "evals", "scripts", "demo_target"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 warn_unreachable = true
-files = ["backend", "runner", "common_lib", "evals", "scripts", "tests"]
+files = ["backend", "runner", "common_lib", "evals", "scripts", "demo_target", "tests"]
 # Test folders have no __init__.py; name modules by their path so equally named
 # test files in different folders do not clash.
 explicit_package_bases = true
@@ -81,7 +83,7 @@ warn_required_dynamic_aliases = true
 # Coverage for the gates (scripts/coverage_gates.py, docs/DECISIONS.md D-008). Branch
 # coverage: an untested 403 branch is exactly what the 100% gate exists to catch.
 [tool.coverage.run]
-source = ["backend", "runner", "common_lib", "evals"]
+source = ["backend", "runner", "common_lib", "evals", "demo_target"]
 branch = true
 
 [tool.coverage.report]
@@ -98,7 +100,7 @@ asyncio_default_fixture_loop_scope = "function"
 # Contracts are added once the modules they name exist; a contract naming a
 # missing module fails.
 [tool.importlinter]
-root_packages = ["backend", "runner", "common_lib", "evals"]
+root_packages = ["backend", "runner", "common_lib", "evals", "demo_target", "migrations", "scripts"]
 # Needed so contracts can forbid third-party packages such as the ORM.
 include_external_packages = true
 
@@ -213,3 +215,69 @@ forbidden_modules = [
     "backend",
     "evals.registry.models",
 ]
+
+# Domain module `evaluation` (slice 002, add-module): one direction inside the module, pure domain.
+[[tool.importlinter.contracts]]
+name = "Evaluation layers depend downwards only: api -> services -> repositories -> domain"
+type = "layers"
+layers = [
+    "evals.evaluation.api",
+    "evals.evaluation.services",
+    "evals.evaluation.repositories",
+    "evals.evaluation.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "The evaluation domain is pure"
+type = "forbidden"
+source_modules = ["evals.evaluation.domain"]
+forbidden_modules = [
+    "tortoise",
+    "fastapi",
+    "aio_pika",
+    "httpx",
+    "structlog",
+    "logging",
+    "backend",
+    "evals.evaluation.models",
+    "evals.registry",
+]
+
+# Between modules (R-203): along the context map only (`evaluation -> registry`), and only
+# through the other module's barrel.
+[[tool.importlinter.contracts]]
+name = "The registry never imports the evaluation module"
+type = "forbidden"
+source_modules = ["evals.registry"]
+forbidden_modules = ["evals.evaluation"]
+
+[[tool.importlinter.contracts]]
+name = "The evaluation module reaches the registry only through its barrel"
+type = "forbidden"
+source_modules = ["evals.evaluation"]
+forbidden_modules = [
+    "evals.registry.api",
+    "evals.registry.domain",
+    "evals.registry.migrations",
+    "evals.registry.models",
+    "evals.registry.module",
+    "evals.registry.repositories",
+    "evals.registry.services",
+]
+allow_indirect_imports = true
+
+# The demo target plays the client's product (FR-208, R-203): it imports nothing from this
+# repository, so it can leave it unchanged.
+[[tool.importlinter.contracts]]
+name = "The demo target imports nothing from this repository"
+type = "forbidden"
+source_modules = ["demo_target"]
+forbidden_modules = ["backend", "evals", "runner", "common_lib", "migrations", "scripts"]
+
+# The demo target plays the client's product: the platform reaches it only over HTTP, as it
+# would a real one, so nothing of ours imports it. Tests may (PP-202).
+[[tool.importlinter.contracts]]
+name = "The platform never imports the demo target"
+type = "forbidden"
+source_modules = ["backend", "runner", "common_lib", "evals", "migrations", "scripts"]
+forbidden_modules = ["demo_target"]

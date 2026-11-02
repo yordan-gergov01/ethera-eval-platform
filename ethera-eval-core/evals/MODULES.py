@@ -6,10 +6,12 @@ Used by: `evals.app.create_app` and `evals.migration_cli`.
 Depends on: the `backend` barrel; each module's barrel once it exists.
 Key invariants: APPEND-ONLY — a new module adds one entry at the end; existing entries are
   never edited by another feature (Bible, cross-cutting registries, tier 1). Slice 001 added
-  `registry` (docs/DECISIONS.md D-003).
+  `registry` (docs/DECISIONS.md D-003); slice 002 added `evaluation`, after `registry` because
+  its seed needs the registry's seeded Product (seeds run in this order).
 """
 
 from backend import ModuleMount
+from evals.evaluation import EVALUATION
 from evals.registry import REGISTRY
 
-MODULES: tuple[ModuleMount, ...] = (REGISTRY,)
+MODULES: tuple[ModuleMount, ...] = (REGISTRY, EVALUATION)

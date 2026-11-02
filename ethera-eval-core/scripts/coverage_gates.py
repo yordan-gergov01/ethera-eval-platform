@@ -45,6 +45,9 @@ CRITICAL_PATHS: tuple[str, ...] = (
     "common_lib/audit.py",
     # Each domain module's membership gate (slice 001, D-014): the authorization of its use cases.
     "evals/registry/services/access.py",
+    # The registry's Product lookup on a member's tenant transaction (slice 002, R-201): the
+    # second half of every module's Product gate.
+    "evals/registry/services/lookup.py",
 )
 
 
