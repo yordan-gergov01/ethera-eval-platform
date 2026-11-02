@@ -40,6 +40,7 @@ Trials, Case Results). Execution of Trials happens in `runner`; the rules below 
 | INV-EVAL-06 | Every mock model call writes a spend row in the same transaction as the stored Trial result. | accepted (brief §7.4, Bible cost rule) |
 | INV-EVAL-07 | Input, data version, AI configuration and result are versioned together on the Eval Run. | accepted (brief §4, estimation) |
 | INV-EVAL-08 | A Golden "passes" a Trial iff every Metric applied to it passes. | proposed |
+| INV-EVAL-09 | A Golden's `input` and `rule` are never blank (a blank input cannot be asked; the rule is the accepted half of "decision + rule"). | accepted (owner, 2026-11-02, D-026) |
 
 ## Events (candidates)
 

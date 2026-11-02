@@ -377,3 +377,15 @@ the owner at a HUMAN GATE).
 - **Erratum (owner, 2026-11-01, at the seal commit):** §3.2 and §7 said version 1's body is
   unchanged after version 2; `is_current` necessarily turns `false`. Both now say "equal except
   `is_current`", which is what the oracle seals.
+
+### D-026: Slice 002 review decisions — expected numbers shown, blank Golden text refused
+
+- **Context:** the slice 002 review (adjudicated) left two owner calls: SC-202/FR-202 say the
+  Dataset page shows every Golden field while US1 AC2 and the mockup omit `expected_numbers`;
+  and the domain code refuses a blank Golden `input` or `rule`, a rule no accepted source stated.
+- **Decision (owner, 2026-11-02):** both as recommended. The Dataset page shows a Golden's
+  expected numbers under its rule ("Numbers: 4.90"), nothing when it has none. INV-EVAL-09 is
+  accepted: a Golden's `input` and `rule` are never blank.
+- **Consequences:** `DatasetVersion.tsx` and its test; `docs/domain/carriers/evaluation.md`
+  gains INV-EVAL-09, sealed by the existing `test_blank_text_is_refused`.
+
