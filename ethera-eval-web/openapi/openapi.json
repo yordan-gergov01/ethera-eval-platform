@@ -1736,6 +1736,311 @@
           }
         }
       }
+    },
+    "/api/v1/products/{client_id}/{project_id}/dataset": {
+      "get": {
+        "tags": [
+          "datasets"
+        ],
+        "summary": "Read Dataset Summary",
+        "description": "The Product's Dataset: every version, and the failure-type counts of the current one.",
+        "operationId": "read_dataset_summary_api_v1_products__client_id___project_id__dataset_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": [
+              "products:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          },
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetSummaryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body too large",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests; see Retry-After",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The database or another dependency is temporarily unavailable",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing permission",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such Product (or the caller is not a member of its Client), no Dataset, or no such version",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products/{client_id}/{project_id}/dataset/versions/{number}": {
+      "get": {
+        "tags": [
+          "datasets"
+        ],
+        "summary": "Read Dataset Version",
+        "description": "One published version of the Product's Dataset with its Goldens in order.",
+        "operationId": "read_dataset_version_api_v1_products__client_id___project_id__dataset_versions__number__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": [
+              "products:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          },
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetVersionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body too large",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests; see Retry-After",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected error",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The database or another dependency is temporarily unavailable",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing permission",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such Product (or the caller is not a member of its Client), no Dataset, or no such version",
+            "content": {
+              "application/problem+json": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1851,6 +2156,122 @@
         ],
         "title": "CurrentUserResponse"
       },
+      "DatasetSummaryResponse": {
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "title": "Client Id"
+          },
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "current_version": {
+            "type": "integer",
+            "title": "Current Version"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/DatasetVersionSummaryResponse"
+            },
+            "type": "array",
+            "title": "Versions"
+          },
+          "failure_type_counts": {
+            "$ref": "#/components/schemas/FailureTypeCountsResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "client_id",
+          "project_id",
+          "current_version",
+          "versions",
+          "failure_type_counts"
+        ],
+        "title": "DatasetSummaryResponse"
+      },
+      "DatasetVersionResponse": {
+        "properties": {
+          "client_id": {
+            "type": "string",
+            "title": "Client Id"
+          },
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Published At"
+          },
+          "is_current": {
+            "type": "boolean",
+            "title": "Is Current"
+          },
+          "goldens": {
+            "items": {
+              "$ref": "#/components/schemas/GoldenResponse"
+            },
+            "type": "array",
+            "title": "Goldens"
+          }
+        },
+        "type": "object",
+        "required": [
+          "client_id",
+          "project_id",
+          "number",
+          "published_at",
+          "is_current",
+          "goldens"
+        ],
+        "title": "DatasetVersionResponse"
+      },
+      "DatasetVersionSummaryResponse": {
+        "properties": {
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Published At"
+          },
+          "golden_count": {
+            "type": "integer",
+            "title": "Golden Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "number",
+          "published_at",
+          "golden_count"
+        ],
+        "title": "DatasetVersionSummaryResponse"
+      },
+      "Decision": {
+        "type": "string",
+        "enum": [
+          "approve_return",
+          "deny_return",
+          "explain_return",
+          "approve_refund",
+          "deny_refund",
+          "report_status",
+          "answer_from_docs",
+          "escalate"
+        ],
+        "title": "Decision",
+        "description": "The action a Product's answer commits to (glossary: Decision)."
+      },
       "ErrorCode": {
         "type": "string",
         "enum": [
@@ -1876,6 +2297,8 @@
           "PRODUCT_NOT_FOUND",
           "MANIFEST_VERSION_CONFLICT",
           "MANIFEST_INVALID",
+          "DATASET_NOT_FOUND",
+          "DATASET_VERSION_NOT_FOUND",
           "MALFORMED_REQUEST",
           "VALIDATION_FAILED",
           "METHOD_NOT_ALLOWED",
@@ -1885,6 +2308,58 @@
         ],
         "title": "ErrorCode",
         "description": "Every error code a client can receive. Values are part of the API: never rename one.\n\nA new, more specific code is added here and passed at the raise site, for\nexample `NotFoundError(code=ErrorCode.USER_NOT_FOUND)`."
+      },
+      "FailureType": {
+        "type": "string",
+        "enum": [
+          "date_math",
+          "refund_rules",
+          "invented_facts",
+          "out_of_docs",
+          "retrieval_miss",
+          "order_status_tool"
+        ],
+        "title": "FailureType",
+        "description": "What kind of mistake a Golden catches; each has its Metric (PP-203)."
+      },
+      "FailureTypeCountsResponse": {
+        "properties": {
+          "date_math": {
+            "type": "integer",
+            "title": "Date Math"
+          },
+          "refund_rules": {
+            "type": "integer",
+            "title": "Refund Rules"
+          },
+          "invented_facts": {
+            "type": "integer",
+            "title": "Invented Facts"
+          },
+          "out_of_docs": {
+            "type": "integer",
+            "title": "Out Of Docs"
+          },
+          "retrieval_miss": {
+            "type": "integer",
+            "title": "Retrieval Miss"
+          },
+          "order_status_tool": {
+            "type": "integer",
+            "title": "Order Status Tool"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date_math",
+          "refund_rules",
+          "invented_facts",
+          "out_of_docs",
+          "retrieval_miss",
+          "order_status_tool"
+        ],
+        "title": "FailureTypeCountsResponse",
+        "description": "How many Goldens of the current version have each failure type; zeros included."
       },
       "FieldError": {
         "properties": {
@@ -1908,6 +2383,82 @@
           "type"
         ],
         "title": "FieldError"
+      },
+      "GoldenOwner": {
+        "type": "string",
+        "enum": [
+          "engineering",
+          "support_content"
+        ],
+        "title": "GoldenOwner",
+        "description": "The team that owns a Golden's fix (PP-205): a team, never a person."
+      },
+      "GoldenResponse": {
+        "properties": {
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "input": {
+            "type": "string",
+            "title": "Input"
+          },
+          "expected_decision": {
+            "$ref": "#/components/schemas/Decision"
+          },
+          "rule": {
+            "type": "string",
+            "title": "Rule"
+          },
+          "failure_type": {
+            "$ref": "#/components/schemas/FailureType"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "expected_numbers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Expected Numbers"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GoldenOwner"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unfixable_by_code": {
+            "type": "boolean",
+            "title": "Unfixable By Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position",
+          "input",
+          "expected_decision",
+          "rule",
+          "failure_type",
+          "context",
+          "expected_numbers",
+          "owner",
+          "unfixable_by_code"
+        ],
+        "title": "GoldenResponse"
       },
       "HealthResponse": {
         "properties": {

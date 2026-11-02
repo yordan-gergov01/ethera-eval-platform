@@ -16,6 +16,7 @@ import { RequireAuth } from './RequireAuth';
 import { RequirePermission } from './RequirePermission';
 import { AppShell, type NavItem } from '@/components/layout/AppShell';
 import type { Permission } from '@/lib/api/types';
+import { DatasetPage } from '@/pages/DatasetPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NewUserPage } from '@/pages/NewUserPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -42,6 +43,11 @@ const PROTECTED_PAGES: readonly ProtectedPage[] = [
     path: 'products/:clientId/:projectId',
     permission: 'products:read',
     element: <ProductPage />,
+  },
+  {
+    path: 'products/:clientId/:projectId/dataset',
+    permission: 'products:read',
+    element: <DatasetPage />,
   },
   {
     path: 'products/:clientId/:projectId/manifest',

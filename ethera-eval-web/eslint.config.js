@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 
 // Feature modules under src/features/. Each one may import itself, shared code
 // and providers, never another feature.
-const FEATURES = ['auth', 'profile', 'users', 'registry'];
+const FEATURES = ['auth', 'profile', 'users', 'registry', 'evaluation'];
 
 // An import path group for a top-level folder under src/ and everything in it.
 const folder = (name) => [`@/${name}`, `@/${name}/**`];

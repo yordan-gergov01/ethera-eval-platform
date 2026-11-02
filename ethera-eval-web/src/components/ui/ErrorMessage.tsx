@@ -3,7 +3,8 @@
  *
  * Role: the one place that maps ApiError, NetworkError and unknown errors to text.
  * Used by: features LoginForm, PasswordForm, ProfileForm, CreateUserForm, EditUserForm, UserDetail,
- *   UsersList, registry ProductsList, ProductDetail, ReplaceManifestForm; routes/RequireAuth.tsx.
+ *   UsersList, registry ProductsList, ProductDetail, ReplaceManifestForm, evaluation
+ *   DatasetSummary, DatasetVersion; routes/RequireAuth.tsx.
  * Depends on: ./Alert, ApiError and NetworkError from lib/api/errors.
  * Key invariants: branches on code and status; PERMISSION_DENIED, 429, 5xx and non-API errors
  *   get fixed text, other 4xx show the backend detail; 429 shows the Retry-After seconds when

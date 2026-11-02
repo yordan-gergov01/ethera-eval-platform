@@ -241,6 +241,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products/{client_id}/{project_id}/dataset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Dataset Summary
+         * @description The Product's Dataset: every version, and the failure-type counts of the current one.
+         */
+        get: operations["read_dataset_summary_api_v1_products__client_id___project_id__dataset_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{client_id}/{project_id}/dataset/versions/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Dataset Version
+         * @description One published version of the Product's Dataset with its Goldens in order.
+         */
+        get: operations["read_dataset_version_api_v1_products__client_id___project_id__dataset_versions__number__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -293,6 +333,54 @@ export interface components {
             /** Permissions */
             permissions: components["schemas"]["Permission"][];
         };
+        /** DatasetSummaryResponse */
+        DatasetSummaryResponse: {
+            /** Client Id */
+            client_id: string;
+            /** Project Id */
+            project_id: string;
+            /** Current Version */
+            current_version: number;
+            /** Versions */
+            versions: components["schemas"]["DatasetVersionSummaryResponse"][];
+            failure_type_counts: components["schemas"]["FailureTypeCountsResponse"];
+        };
+        /** DatasetVersionResponse */
+        DatasetVersionResponse: {
+            /** Client Id */
+            client_id: string;
+            /** Project Id */
+            project_id: string;
+            /** Number */
+            number: number;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /** Is Current */
+            is_current: boolean;
+            /** Goldens */
+            goldens: components["schemas"]["GoldenResponse"][];
+        };
+        /** DatasetVersionSummaryResponse */
+        DatasetVersionSummaryResponse: {
+            /** Number */
+            number: number;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /** Golden Count */
+            golden_count: number;
+        };
+        /**
+         * Decision
+         * @description The action a Product's answer commits to (glossary: Decision).
+         * @enum {string}
+         */
+        Decision: "approve_return" | "deny_return" | "explain_return" | "approve_refund" | "deny_refund" | "report_status" | "answer_from_docs" | "escalate";
         /**
          * ErrorCode
          * @description Every error code a client can receive. Values are part of the API: never rename one.
@@ -301,7 +389,31 @@ export interface components {
          *     example `NotFoundError(code=ErrorCode.USER_NOT_FOUND)`.
          * @enum {string}
          */
-        ErrorCode: "AUTHENTICATION_FAILED" | "INVALID_CREDENTIALS" | "INVALID_TOKEN" | "PERMISSION_DENIED" | "NOT_FOUND" | "CONFLICT" | "BUSINESS_RULE_VIOLATION" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "DATABASE_UNAVAILABLE" | "BROKER_UNAVAILABLE" | "TOO_MANY_CONCURRENT_POLLS" | "USER_NOT_FOUND" | "USERNAME_TAKEN" | "EMAIL_TAKEN" | "SELF_MODIFICATION_FORBIDDEN" | "LAST_ADMIN_PROTECTED" | "WEAK_PASSWORD" | "INVALID_CURRENT_PASSWORD" | "PRODUCT_NOT_FOUND" | "MANIFEST_VERSION_CONFLICT" | "MANIFEST_INVALID" | "MALFORMED_REQUEST" | "VALIDATION_FAILED" | "METHOD_NOT_ALLOWED" | "PAYLOAD_TOO_LARGE" | "HTTP_ERROR" | "INTERNAL_ERROR";
+        ErrorCode: "AUTHENTICATION_FAILED" | "INVALID_CREDENTIALS" | "INVALID_TOKEN" | "PERMISSION_DENIED" | "NOT_FOUND" | "CONFLICT" | "BUSINESS_RULE_VIOLATION" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "DATABASE_UNAVAILABLE" | "BROKER_UNAVAILABLE" | "TOO_MANY_CONCURRENT_POLLS" | "USER_NOT_FOUND" | "USERNAME_TAKEN" | "EMAIL_TAKEN" | "SELF_MODIFICATION_FORBIDDEN" | "LAST_ADMIN_PROTECTED" | "WEAK_PASSWORD" | "INVALID_CURRENT_PASSWORD" | "PRODUCT_NOT_FOUND" | "MANIFEST_VERSION_CONFLICT" | "MANIFEST_INVALID" | "DATASET_NOT_FOUND" | "DATASET_VERSION_NOT_FOUND" | "MALFORMED_REQUEST" | "VALIDATION_FAILED" | "METHOD_NOT_ALLOWED" | "PAYLOAD_TOO_LARGE" | "HTTP_ERROR" | "INTERNAL_ERROR";
+        /**
+         * FailureType
+         * @description What kind of mistake a Golden catches; each has its Metric (PP-203).
+         * @enum {string}
+         */
+        FailureType: "date_math" | "refund_rules" | "invented_facts" | "out_of_docs" | "retrieval_miss" | "order_status_tool";
+        /**
+         * FailureTypeCountsResponse
+         * @description How many Goldens of the current version have each failure type; zeros included.
+         */
+        FailureTypeCountsResponse: {
+            /** Date Math */
+            date_math: number;
+            /** Refund Rules */
+            refund_rules: number;
+            /** Invented Facts */
+            invented_facts: number;
+            /** Out Of Docs */
+            out_of_docs: number;
+            /** Retrieval Miss */
+            retrieval_miss: number;
+            /** Order Status Tool */
+            order_status_tool: number;
+        };
         /** FieldError */
         FieldError: {
             /** Field */
@@ -310,6 +422,30 @@ export interface components {
             message: string;
             /** Type */
             type: string;
+        };
+        /**
+         * GoldenOwner
+         * @description The team that owns a Golden's fix (PP-205): a team, never a person.
+         * @enum {string}
+         */
+        GoldenOwner: "engineering" | "support_content";
+        /** GoldenResponse */
+        GoldenResponse: {
+            /** Position */
+            position: number;
+            /** Input */
+            input: string;
+            expected_decision: components["schemas"]["Decision"];
+            /** Rule */
+            rule: string;
+            failure_type: components["schemas"]["FailureType"];
+            /** Context */
+            context: string | null;
+            /** Expected Numbers */
+            expected_numbers: string[];
+            owner: components["schemas"]["GoldenOwner"] | null;
+            /** Unfixable By Code */
+            unfixable_by_code: boolean;
         };
         /** HealthResponse */
         HealthResponse: {
@@ -1920,6 +2056,233 @@ export interface operations {
             };
             /** @description `base_version` is not the current version */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Request body too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too many requests; see Retry-After */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unexpected error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The database or another dependency is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    read_dataset_summary_api_v1_products__client_id___project_id__dataset_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                client_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetSummaryResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Missing permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description No such Product (or the caller is not a member of its Client), no Dataset, or no such version */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Request body too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too many requests; see Retry-After */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unexpected error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The database or another dependency is temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    read_dataset_version_api_v1_products__client_id___project_id__dataset_versions__number__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                client_id: string;
+                project_id: string;
+                number: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetVersionResponse"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Missing or invalid token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Missing permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": unknown;
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description No such Product (or the caller is not a member of its Client), no Dataset, or no such version */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

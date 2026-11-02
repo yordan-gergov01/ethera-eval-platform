@@ -5,7 +5,8 @@
  *   helpers.
  * Used by: lib/api/client.ts, lib/api/form-errors.ts, lib/query-client.ts, lib/long-poll.ts,
  *   components/ui/ErrorMessage.tsx, features/auth/LoginForm.tsx,
- *   features/registry/replace-outcome.ts, and their tests.
+ *   features/registry/replace-outcome.ts, features/evaluation DatasetSummary and DatasetVersion,
+ *   and their tests.
  * Depends on: FieldError and ProblemDetails from ./types; the Retry-After and X-Request-ID headers.
  * Key invariants: branch on `code`, never on `detail` (which is for people); unknown codes are
  *   kept; a body that is not problem details becomes code HTTP_ERROR; Retry-After is read in
